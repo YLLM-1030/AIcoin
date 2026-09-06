@@ -1,0 +1,8 @@
+{
+  "fire": 0.1,
+  "clip_limit": 0.1,
+  "discard": 0.01,
+  "out_bridge": "18008",
+  "in_bridge": "19000",
+  "cooldown": 5
+}

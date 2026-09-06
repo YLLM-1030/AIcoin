@@ -1,0 +1,1 @@
+{% for message in messages %}{{'<|im_start|>' + (message['role']|replace('user','输入')|replace('assistant','硬币')|replace('memory','记忆')) + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>硬币\n' }}{% endif %}

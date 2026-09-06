@@ -1,0 +1,673 @@
+"""
+弹幕处理服务 — SSE收弹幕 + scorer打分 + 弹夹逻辑 + 前端显示
+端口: 18776
+"""
+import json, re, threading, time, http.client, urllib.request, sys, os
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
+from urllib.parse import urlparse, parse_qs
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from scorer import combined_score
+
+# ============================================================
+# 状态
+# ============================================================
+_state = {'raw': [], 'pending': [], 'saved': [], 'discarded': [], 'sc': [], 'sent': [],
+          'saved_sum': 0.0, 'fire_count': 0, 'flush_count': 0,
+          'pending_fire': [],          # 待发射队列：list of groups，每组 = 一组 items
+          'last_fire_ts': 0.0,         # 上次实际发射到桥的时间戳
+          'fire_seq': 0}               # 待发射组序号（前端展示用）
+_sent_lock = threading.Lock()   # sent 记录独立锁（避免与 _state_lock 嵌套死锁）
+_state_lock = threading.Lock()
+_fire_lock = threading.Lock()   # 发射队列独立锁（pending_fire/fire_seq/last_fire_ts，与 _state_lock 隔离，防 _process_danmaku 持锁入队死锁）
+
+# 配置（默认，前端可调）
+_config = {'fire': 0.30, 'clip_limit': 0.30, 'discard': 0.11, 'out_bridge': '', 'in_bridge': '19000',
+           'cooldown': 5}       # 弹幕发射冷却秒数（同 5s 内最多发射一组）
+CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dm_config.json')
+def _load_config():
+    global _config
+    try:
+        with open(CONFIG_FILE) as f: _config.update(json.load(f))
+    except: pass
+def _save_config():
+    with open(CONFIG_FILE, 'w') as f: json.dump(_config, f, ensure_ascii=False, indent=2)
+_load_config()
+
+# SSE 前端客户端
+_front_sse = []; _fsse_lock = threading.Lock()
+
+def _notify_frontend(event='state', data=None):
+    if data is None:
+        with _state_lock:
+            data = dict(_state)
+            data['fire_remaining'] = max(0.0, float(_config.get('cooldown', 5) or 5) - (time.time() - _state['last_fire_ts']))
+    payload = f'event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n'.encode()
+    with _fsse_lock:
+        dead = []
+        for wf in _front_sse:
+            try: wf.write(payload); wf.flush()
+            except: dead.append(wf)
+        for wf in dead: _front_sse.remove(wf)
+
+# ============================================================
+# 打分 + 弹夹处理
+# ============================================================
+def _process_danmaku(line_text):
+    """处理一条弹幕: '弹幕[user]: text' 或 '[user] text'
+    原文(raw)存原样；待分类(pending)存格式化+分数台账；已存(saved)即弹夹，总分超组合阈值自动发桥"""
+    now = time.strftime('%H:%M:%S')
+    raw_entry = {'line': line_text, 'time': now}
+    m = re.match(r'^\[(.+?)\]\s+(.+)', line_text)
+    if not m:
+        m = re.match(r'^弹幕\[(.+?)\]:\s*(.+)', line_text)
+    if not m:
+        # 解析不了 → 只进原文
+        with _state_lock:
+            _state['raw'].append(raw_entry)
+            if len(_state['raw']) > 200: _state['raw'] = _state['raw'][-200:]
+        _notify_frontend()
+        return
+    user, text = m.group(1), m.group(2)
+    r = combined_score(text, user)
+    score = r['final_score']
+    pend = {'user': user, 'text': text,
+            'formatted': f'弹幕[{user}]：{text}',   # 待分类显示格式（全角冒号，pipeline 同款）
+            'score': score, 'time': now, 'addressee': r['addressee']}
+
+    with _state_lock:
+        _state['raw'].append(raw_entry)
+        if len(_state['raw']) > 200: _state['raw'] = _state['raw'][-200:]
+
+        # 待分类台账：所有可解析弹幕，格式化+分数
+        _state['pending'].append(pend)
+        if len(_state['pending']) > 200: _state['pending'] = _state['pending'][-200:]
+
+        if score >= _config['fire']:
+            # 秒回：已存(弹夹) + 本条 一起进待发射队列（冷却调度发射）
+            fire_items = list(_state['saved']) + [pend]
+            _state['saved'] = []; _state['saved_sum'] = 0.0
+            _state['fire_count'] += 1
+            _notify_frontend('fire', {'items': fire_items, 'fire_count': _state['fire_count']})
+            _enqueue_fire(fire_items)
+        elif score >= _config['discard']:
+            # 进已存(弹夹)
+            _state['saved'].append(pend)
+            _state['saved_sum'] += score
+            _auto_flush_saved()
+        else:
+            _state['discarded'].append(pend)
+            if len(_state['discarded']) > 100: _state['discarded'] = _state['discarded'][-100:]
+
+    _notify_frontend()
+
+
+def _auto_flush_saved():
+    """已存(弹夹)总分 ≥ 组合阈值 → 全部已存进待发射队列。调用方需已持有 _state_lock"""
+    if _state['saved'] and _state['saved_sum'] >= _config['clip_limit']:
+        fire_items = list(_state['saved'])
+        _state['saved'] = []; _state['saved_sum'] = 0.0
+        _state['flush_count'] += 1
+        _notify_frontend('fire', {'items': fire_items, 'flush_count': _state['flush_count']})
+        _enqueue_fire(fire_items)
+
+def _fire_to_bridge(items):
+    """发送已存弹幕到输出桥；无论成败都记录到 sent（页面最右列展示）"""
+    with _sent_lock:
+        for x in items:
+            _state['sent'].append({'line': f"[{x['user']}] {x['text']}", 'time': x.get('time', '')})
+        if len(_state['sent']) > 200: _state['sent'] = _state['sent'][-200:]
+    bp = _config.get('out_bridge', '')
+    if not bp: return
+    # 正确格式：每行一条 弹幕[user]：text（全角冒号，与待分类 formatted 一致）
+    lines = [x.get('formatted') or f"弹幕[{x['user']}]：{x['text']}" for x in items]
+    try:
+        data = json.dumps({'source': '弹幕', 'text': '\n'.join(lines)}).encode()
+        req = urllib.request.Request(f'http://localhost:{bp}/text', data=data,
+            headers={'Content-Type': 'application/json'}, method='POST')
+        urllib.request.urlopen(req, timeout=3)
+    except Exception as e:
+        print(f'发射到桥{bp}失败: {e}')
+
+# ============================================================
+# 发射冷却 + 待发射队列
+# ============================================================
+def _enqueue_fire(items):
+    """把一组弹幕进待发射队列（冷却由调度线程控制发射）。
+    用独立 _fire_lock（与 _state_lock 隔离）——调用方（_process_danmaku 秒回 / _auto_flush_saved）已持有
+    _state_lock 时调用不再死锁。通知由调用方负责（各自已调 _notify_frontend('fire',...)）。"""
+    with _fire_lock:
+        _state['pending_fire'].append(list(items))
+        _state['fire_seq'] += 1
+
+def _fire_scheduler():
+    """发射调度：冷却 ≥ cooldown 且队列非空 → 取队头一组发桥。
+    发射在锁外执行（避免 _state_lock/_sent_lock 嵌套）。"""
+    while True:
+        group = None
+        try:
+            with _fire_lock:
+                now = time.time()
+                cd = float(_config.get('cooldown', 5) or 5)
+                if _state['pending_fire'] and (now - _state['last_fire_ts']) >= cd:
+                    group = _state['pending_fire'].pop(0)
+                    _state['last_fire_ts'] = now
+        except Exception as e:
+            print(f'调度取组失败: {e}')
+            group = None
+        if group:
+            try:
+                _fire_to_bridge(group)
+            except Exception as e:
+                print(f'调度发射失败: {e}')
+            _notify_frontend('fire', {'fired_group': group})
+        time.sleep(0.3)
+
+# ============================================================
+def _input_listener():
+    """轮询 /take 读桥 — 读后清空(wait哨兵)：读到非 wait 才逐行处理，天然不重复"""
+    import requests
+    while True:
+        try:
+            port = str(_config.get('in_bridge', '19000'))
+            r = requests.get(f'http://localhost:{port}/take', timeout=2)
+            if r.status_code == 200:
+                dm = r.json().get('弹幕', '')
+                if dm and dm != 'wait':
+                    for line in dm.strip().split('\n'):
+                        line = line.strip()
+                        if line:
+                            _process_danmaku(line)
+        except Exception as e:
+            print(f'输入桥{port}断开: {e}')
+        time.sleep(0.5)
+
+# ============================================================
+# HTTP Handler
+# ============================================================
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        path = urlparse(self.path).path
+        if path == '/':
+            self._html(PAGE)
+        elif path == '/events':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/event-stream')
+            self.send_header('Cache-Control', 'no-cache')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Connection', 'keep-alive')
+            self.end_headers()
+            with _fsse_lock: _front_sse.append(self.wfile)
+            # 推送当前全量状态
+            with _state_lock: data = dict(_state)
+            payload = f'event: state\ndata: {json.dumps(data, ensure_ascii=False)}\n\n'.encode()
+            try: self.wfile.write(payload); self.wfile.flush()
+            except: pass
+            # 推配置
+            payload = f'event: config\ndata: {json.dumps(_config, ensure_ascii=False)}\n\n'.encode()
+            try: self.wfile.write(payload); self.wfile.flush()
+            except: pass
+            try:
+                while True:
+                    self.wfile.write(b':ping\n\n'); self.wfile.flush()
+                    time.sleep(30)
+            except: pass
+            finally:
+                with _fsse_lock:
+                    if self.wfile in _front_sse: _front_sse.remove(self.wfile)
+        elif path == '/api/config':
+            self._json(200, _config)
+        elif path == '/api/state':
+            # 全量状态（轮询刷新用，与 SSE state 事件同构：_state + fire_remaining）
+            with _state_lock:
+                data = dict(_state)
+                data['fire_remaining'] = max(0.0, float(_config.get('cooldown', 5) or 5) - (time.time() - _state['last_fire_ts']))
+            self._json(200, data)
+        else:
+            self._json(404, {})
+    
+    def do_POST(self):
+        path = urlparse(self.path).path
+        body_len = int(self.headers.get('Content-Length', 0))
+        body = json.loads(self.rfile.read(body_len)) if body_len else {}
+        
+        if path == '/api/config':
+            _config.update(body)
+            _save_config()
+            _notify_frontend('config', _config)
+            self._json(200, {'ok': True})
+        elif path == '/api/save-all':
+            with _state_lock:
+                _state['saved'].extend(_state['pending'])
+                for p in _state['pending']: _state['saved_sum'] += p.get('score', 0)
+                _state['pending'] = []
+                _auto_flush_saved()   # 存完可能超阈值 → 自动发
+            _notify_frontend()
+            self._json(200, {'ok': True})
+        elif path == '/api/discard-all':
+            with _state_lock:
+                _state['discarded'].extend(_state['pending'])
+                _state['pending'] = []
+            _notify_frontend()
+            self._json(200, {'ok': True})
+        elif path == '/api/flush':
+            with _state_lock:
+                items = list(_state['saved'])
+                _state['saved'] = []; _state['saved_sum'] = 0.0
+            if items:
+                _enqueue_fire(items)   # 手动发送也走冷却队列（排队发射）
+            _notify_frontend()
+            self._json(200, {'ok': True, 'count': len(items), 'queued': len(_state['pending_fire'])})
+        elif path == '/api/test':
+            text = body.get('text', '')
+            user = body.get('user', '观众')
+            if text:
+                _process_danmaku(f'[{user}] {text}')
+            self._json(200, {'ok': True})
+        else:
+            self._json(404, {})
+    
+    def _json(self, code, data):
+        b = json.dumps(data, ensure_ascii=False).encode()
+        self.send_response(code)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-Length', len(b))
+        self.end_headers()
+        self.wfile.write(b)
+    
+    def _html(self, content):
+        b = content.encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', len(b))
+        self.end_headers()
+        self.wfile.write(b)
+    
+    def do_OPTIONS(self): self.send_response(200); self.end_headers()
+
+# ============================================================
+# 前端页面
+# ============================================================
+
+PAGE = r"""<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>弹幕接收</title>
+<style>
+*{box-sizing:border-box; margin:0; padding:0}
+body{font-family:system-ui,sans-serif; background:#0d1117; color:#c9d1d9; height:100vh; overflow:hidden}
+#main{display:flex; gap:12px; height:100vh; padding:16px}
+#left{width:360px; min-width:280px; display:flex; flex-direction:column; border:1px solid #30363d; border-radius:8px; background:#161b22}
+#left h2{font-size:15px; padding:10px 12px; border-bottom:1px solid #30363d; color:#8b949e}
+#dm-feed{flex:1; overflow-y:auto; padding:8px 12px; font-size:15px; line-height:1.8}
+#dm-feed .dm-line{padding:2px 0}
+#dm-feed .dm-user{color:#58a6ff; margin-right:6px}
+#dm-feed .dm-sc-tag{background:#b08800; color:#fff; padding:0 6px; border-radius:3px; font-size:12px; margin-right:4px}
+#dm-feed .dm-sc{color:#d4a72c}
+#dm-feed::-webkit-scrollbar{width:4px}
+#dm-feed::-webkit-scrollbar-thumb{background:#30363d; border-radius:2px}
+#right{flex:1; display:flex; flex-direction:column; overflow-y:auto; overflow-x:hidden; min-width:0}
+h1{font-size:22px; margin-bottom:8px}
+.row{display:flex; gap:12px; margin-bottom:12px}
+.col{flex:1; min-width:0}
+.list{background:#161b22; border:1px solid #30363d; border-radius:8px; padding:8px; min-height:120px; max-height:250px; overflow-y:auto; font-size:14px; line-height:1.5}
+.list::-webkit-scrollbar{width:4px}
+.list::-webkit-scrollbar-thumb{background:#30363d; border-radius:2px}
+.item{padding:4px 8px; border-bottom:1px solid #21262d; display:flex; justify-content:space-between; align-items:center}
+.item:last-child{border-bottom:none}
+.item .u{color:#58a6ff; min-width:70px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px}
+.item .t{flex:1; margin:0 8px; font-size:13px}
+.item .s{font-size:12px; padding:1px 6px; border-radius:3px; margin-right:4px; min-width:42px; text-align:center}
+.item .a{color:#484f58; font-size:12px; white-space:nowrap}
+button{padding:5px 12px; background:#185fa5; color:#fff; border:none; border-radius:6px; font-size:13px; cursor:pointer}
+button:hover{background:#1a6fc4}
+button.red{background:#b62324} button.red:hover{background:#d42a2b}
+button.green{background:#1a7f37} button.green:hover{background:#209043}
+button.dim{background:#30363d}
+button.yellow{background:#b08800}
+.cfg-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#8b949e;margin-bottom:8px;flex-wrap:wrap}
+.cfg-row input,.cfg-row select{font-size:13px;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:4px;padding:3px 8px}
+.cfg-row input[type=number]{width:60px}
+.col-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.col-head h3{font-size:14px;color:#8b949e}
+.col-head .cnt{font-size:13px;color:#8b949e}
+#status{font-size:13px}
+#status.ok{color:#1a7f37} #status.err{color:#b62324}
+.score-tag{border-radius:3px; font-size:11px; padding:1px 6px; display:inline-block; margin-right:4px}
+.score-fire{background:#b08800; color:#fff} .score-clip{background:#1a7f37; color:#fff} .score-discard{background:#30363d; color:#8b949e}
+</style>
+</head>
+<body>
+<div id="main">
+<div id="left">
+  <h2>弹幕</h2>
+  <div id="dm-feed"><div style="color:#484f58">等待连接...</div></div>
+</div>
+<div id="right">
+<h1>弹幕接收 <span id="mode-tag" style="font-size:14px;color:#8b949e;margin-left:12px"></span></h1>
+
+<div class="cfg-row">
+  输入桥
+  <select id="cfg-in" onchange="saveInputBridge()">
+    <option value="19000">19000</option>
+    <option value="18000">18000</option><option value="18001">18001</option><option value="18002">18002</option><option value="18003">18003</option><option value="18004">18004</option>
+    <option value="18005">18005</option><option value="18006">18006</option><option value="18007">18007</option><option value="18008">18008</option><option value="18009">18009</option>
+  </select>
+  <button onclick="saveInputBridge()" class="dim">保存</button>
+  <span id="status"></span>
+</div>
+
+<div class="cfg-row">
+  阈值:
+  秒发<input id="cfg-fire" type="number" step="0.01" value="0.30">
+  组合<input id="cfg-clip" type="number" step="0.01" value="0.30">
+  丢弃<input id="cfg-discard" type="number" step="0.01" value="0.11">
+  <button onclick="saveThresholds()" class="dim">保存</button>
+  <span id="save-th-ok" style="color:#1a7f37;font-size:12px;display:none">✓</span>
+  <span style="margin-left:12px">输出桥</span>
+  <select id="cfg-out" onchange="document.getElementById('save-out-ok').style.display='none'">
+    <option value="">(关)</option>
+    <option value="18000">18000</option><option value="18001">18001</option><option value="18002">18002</option><option value="18003">18003</option><option value="18004">18004</option>
+    <option value="18005">18005</option><option value="18006">18006</option><option value="18007">18007</option><option value="18008">18008</option><option value="18009">18009</option>
+  </select>
+  <button onclick="saveOutBridge()" class="dim">保存</button>
+  <span id="save-out-ok" style="color:#1a7f37;font-size:12px;display:none">✓</span>
+</div>
+
+<div class="row">
+  <div class="col"><div class="col-head"><h3>原文</h3><span class="cnt" id="raw-cnt">0</span></div><div id="raw" class="list"><div style="color:#484f58">等待弹幕...</div></div></div>
+  <div class="col"><div class="col-head"><h3>待分类</h3><span class="cnt" id="pend-cnt">0</span></div><div id="pending" class="list"><div style="color:#484f58">等待弹幕...</div></div></div>
+</div>
+<div class="row">
+  <div class="col"><div class="col-head"><h3>已存</h3><span class="cnt" id="saved-cnt">0</span> <span style="font-size:12px;color:#b08800" id="saved-sum"></span></div><div id="saved" class="list"><div style="color:#484f58">暂无</div></div></div>
+  <div class="col"><div class="col-head"><h3>已丢弃</h3><span class="cnt" id="disc-cnt">0</span></div><div id="discarded" class="list"><div style="color:#484f58">暂无</div></div></div>
+  <div class="col"><div class="col-head"><h3>付费SC</h3><span class="cnt" id="sc-cnt">0</span></div><div id="sc-list" class="list"><div style="color:#484f58">暂无</div></div></div>
+</div>
+<div style="margin:8px 0">
+  <button onclick="apiPost('/api/save-all')" class="green">全部存</button>
+  <button onclick="apiPost('/api/discard-all')" class="red">全部丢弃</button>
+  <button onclick="flushBridge()" class="yellow">发送已存到桥</button>
+  <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="dim" style="margin-left:12px">🔄 自动刷新: 关</button>
+  <span style="margin-left:12px;font-size:13px;color:#8b949e">冷却</span>
+  <input id="cfg-cd" type="number" step="1" value="5" style="width:50px;font-size:13px;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:4px;padding:3px 8px">s
+  <button onclick="saveCooldown()" class="dim">保存</button>
+  <span id="save-cd-ok" style="color:#1a7f37;font-size:12px;display:none">✓</span>
+</div>
+
+<div class="row" style="margin-top:4px">
+  <div class="col">
+    <div class="col-head"><h3>待发射队列（冷却后按组发射）</h3><span class="cnt" id="qf-cnt">0</span><span id="cd-left" style="font-size:12px;color:#b08800;margin-left:8px"></span></div>
+    <div id="queue-fire" class="list" style="max-height:220px"><div style="color:#484f58">暂无</div></div>
+  </div>
+</div>
+
+<div class="row" style="margin-top:12px">
+  <div class="col">
+    <div class="col-head"><span style="color:#8b949e;font-size:15px">弹幕测试:</span><input id="test-user" style="width:80px;font-size:13px;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;padding:4px 8px;margin-left:8px" value="观众"><button onclick="testDm()" class="dim" style="margin-left:8px">→ 打分</button></div>
+    <textarea id="test-text" placeholder="弹幕内容..." onkeydown="if(event.key==='Enter'){event.preventDefault();testDm();}" style="width:100%;height:80px;margin-top:6px;font-size:14px;padding:8px;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;resize:vertical;font-family:system-ui"></textarea>
+  </div>
+  <div class="col">
+    <div class="col-head"><span style="color:#b08800;font-size:15px">SC测试:</span><input id="test-sc-user" style="width:80px;font-size:13px;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;padding:4px 8px;margin-left:8px" value="老板"><input id="test-sc-price" style="width:60px;font-size:13px;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;padding:4px 8px;margin-left:8px" value="30" placeholder="¥"><button onclick="testSC()" class="yellow" style="margin-left:8px">→ SC</button></div>
+    <textarea id="test-sc-text" placeholder="SC内容..." onkeydown="if(event.key==='Enter'){event.preventDefault();testSC();}" style="width:100%;height:80px;margin-top:6px;font-size:14px;padding:8px;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;resize:vertical;font-family:system-ui"></textarea>
+  </div>
+</div>
+
+<script>
+var _es = null;
+
+(function(){
+  connectSSE();
+})();
+
+function connectSSE(){
+  if(_es) _es.close();
+  _es = new EventSource('/events');
+  _es.addEventListener('state', function(e){
+    try{ var d = JSON.parse(e.data); updateState(d); }catch(e){}
+  });
+  _es.addEventListener('config', function(e){
+    try{ var c = JSON.parse(e.data); updateCfgUI(c); }catch(e){}
+  });
+  _es.addEventListener('fire', function(e){
+    try{ var d = JSON.parse(e.data); }catch(e){ return; }
+    // 只更新右侧标题的模式标签，左侧 feed 不再插入提示行/图标
+    if(d.fire_count) document.getElementById('mode-tag').textContent = '秒回 x'+d.fire_count;
+    if(d.flush_count) document.getElementById('mode-tag').textContent = '组合发送 x'+d.flush_count;
+  });
+  _es.onopen = function(){ setStatus('已连接', 'ok'); };
+  _es.onerror = function(){
+    setStatus('断开, 3s重连...', 'err');
+    if(_es.readyState === EventSource.CLOSED) setTimeout(connectSSE, 3000);
+  };
+}
+
+var _autoRefreshTimer = null;   // 自动刷新定时器（1s 轮询 /api/state）
+function toggleAutoRefresh(){
+  var btn = document.getElementById('auto-refresh-btn');
+  if(_autoRefreshTimer){
+    clearInterval(_autoRefreshTimer);
+    _autoRefreshTimer = null;
+    btn.textContent = '🔄 自动刷新: 关';
+    btn.className = 'dim';
+  } else {
+    _autoRefreshTimer = setInterval(pollState, 1000);
+    btn.textContent = '🔄 自动刷新: 开';
+    btn.className = 'green';
+    pollState();   // 开启立即刷一次
+  }
+}
+function pollState(){
+  fetch('/api/state').then(function(r){ return r.json(); }).then(function(d){
+    if(d && d.raw) updateState(d);
+  }).catch(function(){});
+}
+
+var _feedLen = 0;   // 左侧 feed 已显示到 raw 的第几条（去重用）
+var _sentLen = 0;   // 已发送列已显示到 sent 的第几条（去重用）
+
+function updateState(d){
+  var raw = d.raw || [], pending = d.pending || [], saved = d.saved || [],
+      discarded = d.discarded || [], sc = d.sc || [], sent = d.sent || [],
+      qf = d.pending_fire || [];
+  document.getElementById('raw-cnt').textContent = raw.length;
+  document.getElementById('pend-cnt').textContent = pending.length;
+  document.getElementById('saved-cnt').textContent = saved.length;
+  document.getElementById('disc-cnt').textContent = discarded.length;
+  document.getElementById('sc-cnt').textContent = sc.length;
+  document.getElementById('sent-cnt').textContent = sent.length;
+  document.getElementById('qf-cnt').textContent = qf.length;
+  document.getElementById('queue-fire').innerHTML = rlistQueue(qf);
+  var rem = d.fire_remaining || 0;
+  var cdEl = document.getElementById('cd-left');
+  if(cdEl){
+    if(qf.length) cdEl.textContent = '冷却 '+rem.toFixed(1)+'s 后发射下一组';
+    else if(rem > 0) cdEl.textContent = '冷却中 '+rem.toFixed(1)+'s';
+    else cdEl.textContent = '就绪';
+  }
+  window._savedSum = d.saved_sum||0;
+  _refreshSavedSum(window._savedSum);
+
+  document.getElementById('raw').innerHTML = rlistRaw(raw.slice(-100), '等待弹幕...');
+  document.getElementById('pending').innerHTML = rlistPend(pending.slice(-100), '等待弹幕...');
+  document.getElementById('saved').innerHTML = rlistPend(saved.slice(-50));
+  document.getElementById('discarded').innerHTML = rlistPend(discarded.slice(-50));
+  document.getElementById('sc-list').innerHTML = rlistPend(sc.slice(-30), '暂无');
+
+  // 左侧 feed：只追加新到的原文行（原样，无分数）
+  var feed = document.getElementById('dm-feed');
+  if(_feedLen > raw.length) _feedLen = 0;               // 服务端滚动截断 → 从头补
+  if(feed.children.length===1 && feed.children[0].textContent.startsWith('等待')) feed.innerHTML='';
+  for(var i = _feedLen; i < raw.length; i++){
+    var x = raw[i];
+    var div = document.createElement('div');
+    div.className = 'dm-line';
+    div.textContent = x.line;
+    feed.appendChild(div);
+  }
+  _feedLen = raw.length;
+  feed.scrollTop = feed.scrollHeight;
+
+  // 最右已发送列：只追加新发射的（原样，无分数）
+  var sfeed = document.getElementById('sent-feed');
+  if(_sentLen > sent.length) _sentLen = 0;
+  if(sfeed.children.length===1 && sfeed.children[0].textContent.startsWith('暂无')) sfeed.innerHTML='';
+  for(var j = _sentLen; j < sent.length; j++){
+    var sx = sent[j];
+    var sdiv = document.createElement('div');
+    sdiv.className = 'dm-line';
+    sdiv.textContent = sx.line;
+    sfeed.appendChild(sdiv);
+  }
+  _sentLen = sent.length;
+  sfeed.scrollTop = sfeed.scrollHeight;
+}
+
+function _refreshSavedSum(sum){
+  var el = document.getElementById('saved-sum');
+  if(el) el.textContent = '总分 '+(sum||0).toFixed(2)+' / '+((window._clipLimit||0.30)).toFixed(2);
+}
+
+function updateCfgUI(c){
+  document.getElementById('cfg-fire').value = c.fire;
+  document.getElementById('cfg-clip').value = c.clip_limit;
+  document.getElementById('cfg-discard').value = c.discard;
+  document.getElementById('cfg-out').value = c.out_bridge || '';
+  document.getElementById('cfg-in').value = c.in_bridge || '19000';
+  if(c.cooldown) document.getElementById('cfg-cd').value = c.cooldown;
+  window._fireThreshold = c.fire;
+  window._clipLimit = c.clip_limit;
+  window._discardThreshold = c.discard;
+  _refreshSavedSum(window._savedSum||0);   // 阈值更新后立即重绘总分显示
+}
+
+function saveThresholds(){
+  var cfg = {
+    fire: parseFloat(document.getElementById('cfg-fire').value)||0.30,
+    clip_limit: parseFloat(document.getElementById('cfg-clip').value)||0.30,
+    discard: parseFloat(document.getElementById('cfg-discard').value)||0.11
+  };
+  window._fireThreshold = cfg.fire;
+  window._clipLimit = cfg.clip_limit;
+  window._discardThreshold = cfg.discard;
+  fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(cfg)}).then(function(){
+    document.getElementById('save-th-ok').style.display = 'inline';
+    setTimeout(function(){ document.getElementById('save-th-ok').style.display = 'none'; }, 2000);
+  });
+}
+
+function saveCooldown(){
+  var v = parseFloat(document.getElementById('cfg-cd').value)||5;
+  fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cooldown: v})}).then(function(){
+    document.getElementById('save-cd-ok').style.display = 'inline';
+    setTimeout(function(){ document.getElementById('save-cd-ok').style.display = 'none'; }, 2000);
+  });
+}
+
+function saveInputBridge(){
+  var v = document.getElementById('cfg-in').value;
+  fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({in_bridge: v})}).then(function(){
+    setStatus('输入桥已保存: '+v+', 重连中...');
+    setTimeout(function(){ connectSSE(); }, 500);
+  });
+}
+
+function saveOutBridge(){
+  var v = document.getElementById('cfg-out').value;
+  fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({out_bridge: v})}).then(function(){
+    document.getElementById('save-out-ok').style.display = 'inline';
+    setTimeout(function(){ document.getElementById('save-out-ok').style.display = 'none'; }, 2000);
+  });
+}
+
+function apiPost(url){
+  fetch(url, {method:'POST'}).then(function(){});
+}
+
+function flushBridge(){
+  fetch('/api/flush', {method:'POST'}).then(function(r){ return r.json(); }).then(function(d){
+    alert('已加入待发射队列 '+d.count+' 条（队列 '+d.queued+' 组）');
+  });
+}
+
+function testDm(){
+  var u = document.getElementById('test-user').value.trim()||'观众';
+  var t = document.getElementById('test-text').value.trim();
+  if(!t) return;
+  document.getElementById('test-text').value = '';
+  fetch('/api/test', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user:u, text:t})});
+}
+
+function testSC(){
+  var u = document.getElementById('test-sc-user').value.trim()||'老板';
+  var t = document.getElementById('test-sc-text').value.trim();
+  var p = parseInt(document.getElementById('test-sc-price').value)||30;
+  if(!t) return;
+  document.getElementById('test-sc-text').value = '';
+  fetch('/api/test', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user:u, text:t, price:p, type:'sc'})});
+}
+
+function setStatus(msg, cls){
+  var s = document.getElementById('status');
+  s.textContent = msg; s.className = cls||'';
+}
+
+function rlistRaw(arr, empty){
+  // 原文块：输入原样，不加工
+  if(!arr.length) return '<div style="color:#484f58">'+(empty||'暂无')+'</div>';
+  return arr.map(function(x){
+    return '<div class="item"><span class="t">'+esc(x.line)+'</span><span class="a">'+x.time+'</span></div>';
+  }).join('');
+}
+
+function rlistPend(arr, empty){
+  // 待分类/已存/已丢弃：格式化文本 + 分数
+  if(!arr.length) return '<div style="color:#484f58">'+(empty||'暂无')+'</div>';
+  return arr.map(function(x){
+    var st = '';
+    if(x.score >= (window._fireThreshold||0.3)) st = '<span class="s" style="background:#b08800;color:#fff">🔫'+x.score.toFixed(2)+'</span>';
+    else if(x.score >= (window._discardThreshold||0.11)) st = '<span class="s" style="background:#1a7f37;color:#fff">📋'+x.score.toFixed(2)+'</span>';
+    else st = '<span class="s" style="background:#30363d;color:#8b949e">🗑'+x.score.toFixed(2)+'</span>';
+    var p = x.price ? ' <b style="color:#d4a72c">Y'+x.price+'</b>' : '';
+    var txt = x.formatted || ('弹幕['+x.user+']：'+x.text);
+    return '<div class="item">'+st+'<span class="t">'+esc(txt)+p+'</span><span class="a">'+x.time+'</span></div>';
+  }).join('');
+}
+function rlistQueue(arr){
+  // 待发射队列：分组显示，每组一个框（组号 + 条数 + 内容）
+  if(!arr.length) return '<div style="color:#484f58">暂无</div>';
+  return arr.map(function(g, gi){
+    var inner = g.map(function(x){
+      var txt = x.formatted || ('弹幕['+x.user+']：'+x.text);
+      return '<div style="padding:2px 8px;color:#c9d1d9;font-size:13px;line-height:1.6">'+esc(txt)+'</div>';
+    }).join('');
+    return '<div style="border:1px solid #b08800;border-radius:6px;margin:6px 4px;overflow:hidden">'+
+      '<div style="font-size:11px;color:#b08800;background:#1c2128;padding:2px 8px">组 '+(gi+1)+' · '+g.length+'条</div>'+
+      inner+'</div>';
+  }).join('');
+}
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</div><!-- /right -->
+<div id="sent" style="width:360px;min-width:280px;display:flex;flex-direction:column;border:1px solid #30363d;border-radius:8px;background:#161b22">
+  <h2 style="font-size:15px;padding:10px 12px;border-bottom:1px solid #30363d;color:#8b949e">已发送 <span id="sent-cnt" style="font-size:12px;color:#b08800"></span></h2>
+  <div id="sent-feed" style="flex:1;overflow-y:auto;padding:8px 12px;font-size:15px;line-height:1.8"><div style="color:#484f58">暂无</div></div>
+</div>
+</div><!-- /main -->
+</body>
+</html>"""
+
+# ============================================================
+# 启动
+# ============================================================
+class ThreadedServer(ThreadingMixIn, HTTPServer): daemon_threads = True
+
+if __name__ == '__main__':
+    threading.Thread(target=_input_listener, daemon=True).start()
+    threading.Thread(target=_fire_scheduler, daemon=True).start()   # 发射冷却调度
+    srv = ThreadedServer(('0.0.0.0', 18776), Handler)
+    print(f'弹幕接收 → http://localhost:18776')
+    print(f'配置: 秒发={_config["fire"]} 组合={_config["clip_limit"]} 丢弃={_config["discard"]} 输出桥={_config["out_bridge"]} 冷却={_config.get("cooldown", 5)}s')
+    srv.serve_forever()

@@ -1,0 +1,1364 @@
+[
+  {
+    "term": "李大霄",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "英大证券首席经济学家，以发明各种底闻名。钻石底（2132点）、婴儿底、儿童底、少年底、地球顶。名言：做好人买好股得好报、爱国牛。被股民称为大霄校长。他的发言被反向使用——他一唱多市场就要跌。"
+  },
+  {
+    "term": "钻石底",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "李大霄2012年提出上证2132点是钻石般珍贵的底部，结果后来跌到1849点。他又发明婴儿底、儿童底、少年底、青春底等底部概念。股民调侃：薛定谔的底——底部既是存在又是不存在的。"
+  },
+  {
+    "term": "关灯吃面",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "重庆啤酒连续跌停后，股吧网友发帖：今天回到家煮了点面吃，一边吃面一边哭，泪水滴落在碗里没有开灯。代表A股股民亏损惨重欲哭无泪的经典梗。"
+  },
+  {
+    "term": "3000点保卫战",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "上证指数反复在3000点拉锯。十几年间无数次保卫战，3000点已成为A股的地平线——上面是地表下面是地狱。股吧名言：A股用了十几年终于把3000点从底部变成了顶部。"
+  },
+  {
+    "term": "韭菜",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "股民自嘲称呼。韭菜割了一茬又长一茬，比喻散户反复被收割又反复入场。韭菜的自我修养、韭菜盒子（被割的散户凑一起）。与镰刀（主力/机构）相对。"
+  },
+  {
+    "term": "镰刀",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "在股市中收割韭菜的机构游资或大资金。镰刀挥舞韭菜瑟瑟发抖是A股经典生态描述。当散户喊这次不一样时镰刀就笑了。"
+  },
+  {
+    "term": "利好茅台",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "A股万能用语，任何新闻都可以被解释为利好茅台。如：天气不好在家喝酒利好茅台；天气好出去聚餐利好茅台；地震了避险买白酒利好茅台。代表A股股民对茅台的图腾化崇拜。"
+  },
+  {
+    "term": "茅台信仰",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "A股股民对贵州茅台的盲目崇拜。茅台永远涨、茅台YYDS。段子：不管什么利空都是利好茅台。当然茅台后来也跌了，信仰崩塌成为新梗。"
+  },
+  {
+    "term": "满仓踏空",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "满仓买入后股票不涨反跌，或者自己买的股票不涨没买的股票暴涨。满仓踏空不如空仓套牢是经典双输总结。"
+  },
+  {
+    "term": "国家队",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "指证金公司汇金公司等具有官方背景的救市资金。每次大跌股民就呼唤国家队进场。国家队走了大家一起死是熊市的经典恐惧。"
+  },
+  {
+    "term": "妖股",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "走势完全脱离基本面的股票，连续涨停或跌停不讲道理。妖股不言顶妖股不言底。九安医疗东方通信是经典妖股案例。"
+  },
+  {
+    "term": "天地板",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "股票当天从涨停板直接砸到跌停板振幅20%。追涨停的人收盘直接亏20%。反过来从跌停到涨停叫地天板。"
+  },
+  {
+    "term": "核按钮",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "集合竞价或开盘瞬间以跌停价挂单卖出不顾一切逃跑。按核按钮描述主力出货或散户踩踏的极端情况。"
+  },
+  {
+    "term": "牛灾",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "指数在涨（表面牛市）但绝大多数个股在暴跌只有少数权重股撑指数。指数牛了个股灾的简称。"
+  },
+  {
+    "term": "T飞了",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "想做T+0操作（先卖后买），结果卖完后股价暴涨再也接不回来。做T做成T飞是散户经典操作失误。"
+  },
+  {
+    "term": "抄底抄在半山腰",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "以为抄到底部结果股价继续暴跌。你以为到底了其实下面还有地下室地下室的下面还有地心。"
+  },
+  {
+    "term": "接飞刀",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "不要接下跌的飞刀是华尔街名言。在股价暴跌时贸然买入被刺中。A股版：跌了50%觉得便宜进去发现还能再跌50%。"
+  },
+  {
+    "term": "涨停敢死队",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "专门追涨停板买入的短线游资。宁波解放南路（徐翔）曾是传奇涨停敢死队席位。敢死队既形容高风险操作也暗示进去了可能出不来。"
+  },
+  {
+    "term": "大A",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "股民对A股的昵称又爱又恨的语气。大A啊大A你什么时候能站起来是经典句型。"
+  },
+  {
+    "term": "一夜回到解放前",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "A股股民经典感受。辛苦赚了几个月的收益一天暴跌全部吐回去。辛辛苦苦大半年一夜回到解放前。"
+  },
+  {
+    "term": "天台见",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "炒股亏到想跳楼。天台见=在天台上排队跳楼。天台太挤了=亏的人太多。"
+  },
+  {
+    "term": "上辈子杀人放火这辈子A股受苦",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "A股股民自嘲。形容在A股赚钱比登天还难。"
+  },
+  {
+    "term": "倒在黎明前",
+    "category": "股票梗",
+    "source": "manual",
+    "explanation": "在股价最低点割肉卖掉之后立刻暴涨。我又一次倒在了黎明前。散户经典操作。"
+  },
+  {
+    "term": "yyds",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "永远的神拼音缩写，用于高度赞赏某人或某事物。有时也反讽用。"
+  },
+  {
+    "term": "awsl",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "啊我死了拼音缩写，表示被可爱或惊艳到无法呼吸。"
+  },
+  {
+    "term": "xswl",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "笑死我了拼音缩写，表示非常好笑。"
+  },
+  {
+    "term": "ky",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "源自日语空気読めない，不会看气氛在不合适的场合说不合适的话。"
+  },
+  {
+    "term": "破防",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "心理防线被击穿，被某句话或场景触动导致情绪失控。常用于游戏和直播中。"
+  },
+  {
+    "term": "内卷",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "有限资源下过度竞争付出增多但收益不变。后泛化为卷，如太卷了卷王。"
+  },
+  {
+    "term": "摆烂",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "放弃努力任由事情往坏发展。今天摆烂了摆烂人生。"
+  },
+  {
+    "term": "电子包浆",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "图片表情包被反复转发后画质严重下降的痕迹。这张图都包浆了你还发？"
+  },
+  {
+    "term": "典中典",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "典是经典的反讽用法。典中典=经典中的经典，用于讽刺对方言论太有代表性了。"
+  },
+  {
+    "term": "绷不住了",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "忍不住笑出声或破防。蚌埠住了是其谐音变体。"
+  },
+  {
+    "term": "流汗黄豆",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "指😅表情，表达尴尬无语或阴阳怪气。B站弹幕常用。"
+  },
+  {
+    "term": "依托答辩",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "一坨大便的谐音，形容质量极差。这电影简直是依托答辩。"
+  },
+  {
+    "term": "白嫖",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "看内容不点赞不投币不关注的行为。白嫖党。B站UP主求三连的固定对象。"
+  },
+  {
+    "term": "下次一定",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "嘴上说支持但实际不行动。B站经典话术：下次一定三连但永远没有这次。"
+  },
+  {
+    "term": "欧皇",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "运气极好的人，抽卡总能出货。非酋与之相对。吸欧气。源自抽卡游戏文化。"
+  },
+  {
+    "term": "非酋",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "运气极差的人，与欧皇相对。非酋本酋。"
+  },
+  {
+    "term": "氪金",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "在游戏中充值花钱，源自日语課金。氪金大佬微氪零氪。"
+  },
+  {
+    "term": "肝",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "花大量时间和精力刷游戏内容熬夜肝。肝帝肝爆了护肝（少肝点）。"
+  },
+  {
+    "term": "缝合",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "将多个作品或元素拼凑在一起常用于指责抄袭借鉴。缝合怪万物皆可缝合。"
+  },
+  {
+    "term": "赛博",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "前缀表示网络数字化的。赛博丁真（被包装的虚假网红）、赛博判官（网上审判者）、赛博菩萨。"
+  },
+  {
+    "term": "社死",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "社会性死亡。在公共场合出了大丑到没脸见人。当场社死社死现场。"
+  },
+  {
+    "term": "社牛",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "社交牛逼症社交能力极强不怯场。社恐与之相对。"
+  },
+  {
+    "term": "乐子人",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "以围观热闹制造混乱为乐的人。我就是个乐子人乐子人看戏。"
+  },
+  {
+    "term": "理中客",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "理性中立客观的讽刺缩写，指表面中立实则偏袒一方的人。老理中客了。"
+  },
+  {
+    "term": "CPU",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "PUA的谐音变体指情感操控。他在CPU你被CPU了。"
+  },
+  {
+    "term": "疯狂星期四",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "肯德基疯狂星期四固定段子。每周四网友编各种离谱故事最后求V我50（微信转我50）。今天是疯狂星期四V我50是经典互联网模因。"
+  },
+  {
+    "term": "V我50",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "微信转我50元的缩写配合肯德基疯狂星期四梗使用。"
+  },
+  {
+    "term": "赢麻了",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "赢到麻木了，反讽有人过度渲染自己胜利。输麻了与之相对。"
+  },
+  {
+    "term": "抽象",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "内容荒诞无厘头难以理解。出自孙笑川吧文化。太抽象了整点抽象的抽象带师。"
+  },
+  {
+    "term": "急了",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "嘲讽对方被说到痛处而气急败坏。这就急了急了急了。"
+  },
+  {
+    "term": "回旋镖",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "某人之前说的话或做的事反过来打自己脸。回旋镖来了精准回旋镖。类似打脸但更有戏剧性。"
+  },
+  {
+    "term": "祖安",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "源于英雄联盟祖安区以玩家嘴臭闻名。后泛指骂人文化和嘴臭玩家。祖安人祖安大舞台。"
+  },
+  {
+    "term": "4396",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "S6全球总决赛厂长（Clearlove）一场比赛只打出4396点伤害。后来成为嘲讽打野选手的伤害计量单位。"
+  },
+  {
+    "term": "55开",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "前职业选手White（卢本伟）自称和Faker对线五五开。后因开挂被封杀。我和Faker五五开成为电竞吹牛经典。"
+  },
+  {
+    "term": "落地成盒",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "吃鸡游戏刚跳伞落地就被击杀变成盒子。每局都是落地成盒我的盒子里永远只有一双鞋。"
+  },
+  {
+    "term": "苟",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "吃鸡游戏全程躲藏不打架苟到最后。苟进决赛圈苟王。后泛化到各种语境。"
+  },
+  {
+    "term": "小学生",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "游戏技术差不听指挥爱喷人的低龄玩家。放假了小学生出动了是MOBA玩家噩梦。"
+  },
+  {
+    "term": "演员",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "游戏中故意送人头坑队友的人。演你这波演技满分。最高境界是你说他演吧看起来又像是真菜。"
+  },
+  {
+    "term": "快乐风男",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "英雄联盟亚索。E来E去的快乐远大于赢游戏本身。只要E得够快队友的问号就跟不上我。"
+  },
+  {
+    "term": "648",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "手游充值标准最高档位648元。一单648成为氪金计量单位。十连648党。"
+  },
+  {
+    "term": "原神怎么你了",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "出自B站鬼畜视频。从原批骂战衍生出来的反讽梗用于调侃原神玩家过于敏感护主。"
+  },
+  {
+    "term": "吃鸡",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "绝地求生获胜标语大吉大利今晚吃鸡。今晚吃鸡吗成为组队游戏暗号。"
+  },
+  {
+    "term": "穷开挂",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "菜到像开了挂但开的是反向菜挂。这操作你说没开挂我都不信——穷开挂。"
+  },
+  {
+    "term": "毒奶",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "反向祝福。你说XXX一定能赢XXX立刻输了。黄旭东的嘴是毒奶界的传说。求求你别奶了。"
+  },
+  {
+    "term": "JOJO我不做人啦",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "出自JOJO奇妙冒险第二部卡兹的台词。用于表达放弃当正常人的搞笑场景。"
+  },
+  {
+    "term": "砸瓦鲁多",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "DIO的替身The World的日语空耳，能力是停止时间。砸瓦鲁多時よ止まれWryyyyy是经典三连。"
+  },
+  {
+    "term": "这是替身攻击",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "出自JOJO。任何人做出离谱操作或超常表现时都可评论这是替身攻击。万能用语。"
+  },
+  {
+    "term": "欧拉欧拉欧拉",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "承太郎替身白金之星攻击时的连打音效代表全力输出。DIO对应的是木大木大木大。"
+  },
+  {
+    "term": "计划通",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "出自死亡笔记夜神月一切尽在掌握的表情。通常说完计划通之后就会翻车是死亡flag。"
+  },
+  {
+    "term": "错的不是我是世界",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "出自叛逆的鲁路修等多部作品。中二病典型台词。无论发生什么都是世界的错。"
+  },
+  {
+    "term": "教练我想打篮球",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "灌篮高手三井寿浪子回头名场面。教练我想成为万能用语框架。"
+  },
+  {
+    "term": "已经没什么好怕的了",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "魔法少女小圆鹿目圆台词。说了这句话的人通常会经历更恐怖的事。经典死亡flag。"
+  },
+  {
+    "term": "战斗爽",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "出自刃牙范马勇次郎。表达纯粹暴力快感。成为我就是要干的万能句式。"
+  },
+  {
+    "term": "你不要过来啊",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "JOJO乔瑟夫面对DIO时的名台词。广泛用于表情包和搞笑场景。"
+  },
+  {
+    "term": "但是我拒绝了",
+    "category": "动漫梗",
+    "source": "manual",
+    "explanation": "JOJO第四部岸边露伴名言。用于表演拒绝看似无法拒绝的事。"
+  },
+  {
+    "term": "耗子尾汁",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "好自为之谐音出自马保国。配合大意了没有闪年轻人不讲武德使用。马保国三连是2020年现象级网络梗。"
+  },
+  {
+    "term": "大意了没有闪",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "马保国被偷袭后的经典发言。用于形容被预料之外的攻击或事件打懵。"
+  },
+  {
+    "term": "丁真",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "原指理塘藏族小伙丁真珍珠。后赛博丁真用于讽刺被包装出来实力配不上名气的网红。一眼丁真=一眼看出真假。"
+  },
+  {
+    "term": "赛博丁真",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "讽刺被包装出来的虚假网红或虚拟偶像。源于丁真梗。"
+  },
+  {
+    "term": "一眼顶针",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "一眼丁真的谐音变体一眼就能看出真假。"
+  },
+  {
+    "term": "鸡你太美",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "蔡徐坤只因你太美的空耳梗。配套梗：背带裤中分铁山靠。"
+  },
+  {
+    "term": "小黑子",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "黑粉的调侃性称呼源于蔡徐坤梗。小黑子露出鸡脚了吧。"
+  },
+  {
+    "term": "食不食油饼",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "是不是有病的谐音梗。配合小黑子使用。"
+  },
+  {
+    "term": "奥利给",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "给力噢倒读加油鼓劲用语。出自快手网红朝阳冬泳怪鸽。我们遇到什么困难也不要怕微笑着面对它！加油奥利给！"
+  },
+  {
+    "term": "我全都要",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "出自电影九品芝麻官名场面。表示贪心地全部占有。常用于二选一问题下的搞笑回答。"
+  },
+  {
+    "term": "格局小了",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "眼界狭隘胸襟窄。格局打开与之相对。格局注意格局常用于提醒对方不要斤斤计较。"
+  },
+  {
+    "term": "真香",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "出自变形计王境泽。之前说我就算饿死也不吃你们的东西之后端着碗说真香。指拒绝后又欣然接受。"
+  },
+  {
+    "term": "打脸",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "自己之前的言论被事实推翻。这波打脸来得太快。和回旋镖类似但更直接。"
+  },
+  {
+    "term": "杠精",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "喜欢在各种话题下抬杠找茬的人。ETC自动抬杠是衍生梗。"
+  },
+  {
+    "term": "键盘侠",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "网上表现正义勇敢但现实中沉默的人。网络巨人现实矮子。"
+  },
+  {
+    "term": "喷子",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "在网上无差别攻击他人的用户。网络喷子祖安喷子。"
+  },
+  {
+    "term": "带节奏",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "发布煽动性内容引导舆论方向。有人带节奏别被带节奏了。"
+  },
+  {
+    "term": "岁月史书",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "篡改或歪曲历史记录。常用于讽刺某人修改记忆或事实。你在写岁月史书？"
+  },
+  {
+    "term": "通辽",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "源于B站UP主小约翰可汗。通辽可汗指小约翰。通辽宇宙指他视频里的各种小国奇葩历史。"
+  },
+  {
+    "term": "玉玉了",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "抑郁了的谐音卖萌说法。玉玉了要抱抱。"
+  },
+  {
+    "term": "寄",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "完蛋了的极简版。这波寄了寄寄寄。"
+  },
+  {
+    "term": "开摆",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "开始摆烂的缩写。开摆表示放弃努力。"
+  },
+  {
+    "term": "双厨狂喜",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "自己喜欢的两个作品人物产生了联动让自己非常高兴。双厨狂喜！"
+  },
+  {
+    "term": "梦幻联动",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "两个看似不相干的人或作品合作互动。这波是梦幻联动。"
+  },
+  {
+    "term": "好家伙",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "表达惊讶无语的万能感叹。好家伙这也行？源自春晚赵丽蓉小品。"
+  },
+  {
+    "term": "夺笋啊",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "多损啊的谐音。你可真是夺笋啊山上的笋都被你夺完了。"
+  },
+  {
+    "term": "家人们",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "网络主播对观众的称呼后成梗。家人们谁懂啊家人们点个赞。"
+  },
+  {
+    "term": "谁问你了",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "怼人用语。对方主动说了一堆没人问的事时的回复。谁问你了没人问你。"
+  },
+  {
+    "term": "狗头保命",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "在可能被喷的言论后加/doge表情表示我是开玩笑的别打我。手动狗头。"
+  },
+  {
+    "term": "萌新",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "新手装作什么都不懂（实际可能很强）。萌新求带。大佬与之相对。"
+  },
+  {
+    "term": "大佬",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "高手大神。大佬带带我。装萌新是大佬的恶趣味。"
+  },
+  {
+    "term": "前方高能",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "B站弹幕预警用语提醒观众接下来有精彩内容。前方高能预警非战斗人员请迅速撤离。"
+  },
+  {
+    "term": "空降",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "通过视频进度条直接跳到指定时间点。空降xx:xx空降成功。"
+  },
+  {
+    "term": "小丑",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "自己他人在某情境中表现得像小丑一样可笑。小丑竟是我自己是经典句式。"
+  },
+  {
+    "term": "麻了",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "麻木了。这操作给我看麻了麻中麻。表达无语或震惊。"
+  },
+  {
+    "term": "好活当赏",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "好活=好的表演。好活当赏表示很精彩值得打赏。烂活与之相对。"
+  },
+  {
+    "term": "逆天",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "离谱到违背天理的程度。这也太逆天了逆天言论。"
+  },
+  {
+    "term": "大冤种",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "东北方言指吃哑巴亏被坑了的人。我就是那个大冤种别当大冤种。"
+  },
+  {
+    "term": "老默我想吃鱼了",
+    "category": "网络梗",
+    "source": "manual",
+    "explanation": "狂飙高启强经典台词暗语让老默去杀人。广泛用于想吃东西或想让人办事的梗。"
+  },
+  {
+    "term": "AI幻觉",
+    "category": "科技梗",
+    "source": "manual",
+    "explanation": "大模型编造事实的现象。模型一本正经地胡说八道。AI又在幻觉了。"
+  },
+  {
+    "term": "炼丹",
+    "category": "科技梗",
+    "source": "manual",
+    "explanation": "训练AI模型被类比为炼丹。炼丹师=模型训练者。丹方=模型架构和参数。炸炉=训练失败。"
+  },
+  {
+    "term": "大力出奇迹",
+    "category": "科技梗",
+    "source": "manual",
+    "explanation": "原为台球术语。AI圈指堆算力数据量就能出好结果（Scaling Law）。大力出奇迹大力也能出傻子是衍生。"
+  },
+  {
+    "term": "金坷垃",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "早期B站鬼畜区奠基之作。素材来自美国圣地亚哥金坷垃化肥广告，台词极其魔性：'金坷垃，金坷垃，我们的！金坷垃！不能给他！肥料掺了金坷垃，不流失不蒸发零浪费！'三位农民伯伯的夸张表演被反复二创，与诸葛亮王朗、元首并称鬼畜区三驾马车。"
+  },
+  {
+    "term": "诸葛亮骂王朗",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "B站鬼畜区镇站之宝。素材来自94版《三国演义》诸葛亮阵前骂死王朗。原台词'我从未见过有如此厚颜无耻之人'、'二臣贼子，你枉活七十有六，一生未立寸功'被鬼畜调音成数不清的神曲。代表作《诸葛亮×王朗·最终鬼畜蓝蓝路》。"
+  },
+  {
+    "term": "元首的愤怒",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "源自电影《帝国的毁灭》中希特勒在 bunker 里暴怒摔电话的片段。因为表情夸张、台词有节奏感（'我到河北省来'、'气死偶咧'、'渣渣'等空耳），成为鬼畜区永不过时的素材。被空耳为'我到河北省来，我发现这的人民甚是○逼'等。"
+  },
+  {
+    "term": "梁逸峰",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "早期鬼畜全明星常客。香港中学生梁逸峰在朗诵比赛中用极其夸张的表情和肢体动作朗诵《宿业师山房待丁大不至》。'我悄悄地望着—但是—月亮—从那边—起来了！'魔性的断句和表情让他成为鬼畜区经典素材。"
+  },
+  {
+    "term": "雪姨",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "素材来自电视剧《情深深雨蒙蒙》中雪姨（王琳饰）的经典段落：'你有本事抢男人，你有本事开门啊！别躲在里面不出声，我知道你在家！'配合鬼畜调音成为洗脑神曲。代表作《雪姨开门歌》。"
+  },
+  {
+    "term": "江南皮革厂",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "源自地摊促销神曲：'浙江温州！浙江温州！最大皮革厂！江南皮革厂倒闭了！王八蛋黄鹤老板吃喝嫖赌欠下了3.5个亿，带着他的小姨子跑了！'因魔性循环和挂羊头卖狗肉的促销话术成为鬼畜区神梗。"
+  },
+  {
+    "term": "Are you OK",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "小米创始人雷军在印度发布会上用蹩脚英语说'Are you OK？'，被B站UP主Mr.Lemon做成鬼畜神曲，播放量破千万。雷总从此喜提Are you OK教父称号，小米官方也下场玩梗。"
+  },
+  {
+    "term": "我的滑板鞋",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "约瑟翰庞麦郎的原创歌曲《我的滑板鞋》因独特的唱腔、跑调、和迷之节奏成为鬼畜区神曲。'摩擦摩擦，在光滑的地上摩擦！'被华晨宇翻唱后更爆火。庞麦郎本人也成为一个文化符号。"
+  },
+  {
+    "term": "波澜哥",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "素材来自选秀节目《中国梦之声》。选手唐宁在舞台上表演歌曲《波澜》时全程跑调、抢拍、忘词，评委韩红的表情管理成为名场面。'你成功的把我带跑了！'、'不要叫我波澜哥'是经典台词。"
+  },
+  {
+    "term": "高音哥",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "同样是《中国梦之声》走出来的鬼畜素材。选手吴强用极其独特的发声方式演唱《天路》，尤其是'那就是—青藏—高—原！'的高音部分，表情狰狞跑调却极度自信。韩红名言'你成功地让我出了一身冷汗'广为流传。"
+  },
+  {
+    "term": "大力哥",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "沈阳人赵金龙因持刀抢劫被抓后在审讯室的金句走红网络：'大力出奇迹！'、'一天少说喝两瓶大力，不喝不行'（大力指大力牌止咳水）。'我必须得有大力，没有大力我就活不了'等骚话成为鬼畜区常青树。"
+  },
+  {
+    "term": "蓝瘦香菇",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "2016年现象级网络梗。广西南宁一小哥失恋后发视频：'蓝瘦，香菇，本来今颠高高兴兴，泥为什莫要说这种话？'（难受想哭，本来今天高高兴兴，你为什么要说这种话）。因南宁口音自带鬼畜效果走红全网。"
+  },
+  {
+    "term": "葛平",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "中国动画《蓝猫淘气三千问》中蓝猫的配音演员。'小朋友们大家好，我是你们的好朋友葛平'是经典开场白。早期B站鬼畜元老，与金坷垃、元首、诸葛亮并称鬼畜全明星。后本人亲自下场演唱《循环》，被尊为葛叔。"
+  },
+  {
+    "term": "梁非凡",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "TVB剧《巾帼枭雄之义海豪情》中的名场面。刘醒（黎耀祥饰）对上司梁非凡（麦长青饰）怒吼：'梁非凡！吔屎啦你！'（梁非凡，吃屎吧你！）。这句粤语粗口在鬼畜区被反复调音，成为粤语鬼畜代表。"
+  },
+  {
+    "term": "Duang",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "成龙代言的洗发水广告被B站UP主调音后出现魔性音效'Duang'。成龙在广告中说'一开始我是拒绝的，不能你说加就加'，被鬼畜后变成'Duang~'特效。成龙本人也在一档节目中现场回应了这个梗。"
+  },
+  {
+    "term": "王境泽真香",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "出自湖南卫视《变形计》城市主人公王境泽。刚到农村时放话'我王境泽就是饿死，死外面，从这跳下去，也不吃你们一点东西！'下一幕就端着碗大口吃饭'真香！'。此梗成为哲学家级别的经典（真香定律）。"
+  },
+  {
+    "term": "华农兄弟",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "江西赣州的两位竹鼠养殖户（刘苏良和胡跃清）。以各种理由吃竹鼠走红：'这只竹鼠中暑了，不如我们把它吃掉'、'它打架受了内伤，只好吃掉'、'它太胖了会生病，我们把它吃掉'。无所不吃、万物皆是食材的淡定语气成为标志。"
+  },
+  {
+    "term": "张全蛋",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "暴走大事件中的角色，饰演富士康流水线工人。他一口充满乡村英语口音的'车间英语'和一本正经的吐槽风格成为鬼畜素材。代表作《质检员张全蛋》。'这个手机呢是来自Apple公司的iPhone6s Plus——'。"
+  },
+  {
+    "term": "虎哥",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "快手网红虎哥（穆春晓/虎哥说车），以其魔性的说话节奏和'说得好但是毫无意义'、'虎哥虎哥，你大哥还是你大哥'等金句闻名。配合快手上的迷之运镜和剪辑成为鬼畜区新素材。"
+  },
+  {
+    "term": "体面/分手快乐鬼畜",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "以电影《前任3》主题曲《体面》为素材的各种鬼畜翻唱。尤其是于文文的原唱被调成各种方言版本或与王者荣耀等游戏结合，'分手应该体面，谁都不要说抱歉'变成万能调音模板。"
+  },
+  {
+    "term": "派大星",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "《海绵宝宝》中派大星的魔性台词被鬼畜化，尤其是'海绵宝宝我们去抓水母吧！'、'你知道吗？章鱼哥？'等句式。配合派大星标志性的猪叫声形成独特的鬼畜流派。"
+  },
+  {
+    "term": "成华大道",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "源于B站UP主'田野上的繁荣'（小刚）的吃播口头禅。'到成华大道走噻！'、'到二仙桥！'因口音魔性和用生命在追问的方式被鬼畜。配合交警执法的原片形成了'到成华大道！'的洗脑循环。"
+  },
+  {
+    "term": "六小龄童",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "因六小龄童在各种场合反复强调'文体两开花'、'苦练七十二变笑对八十一难'、'今年下半年中美合拍的西游记即将正式开机'，被B站UP主鬼畜调音形成'六学'文化。'文体两开花'成为一个时代注解。"
+  },
+  {
+    "term": "大碗宽面",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "吴亦凡在综艺节目中即兴说唱'你看这个面它又长又宽，就像这个碗它又大又圆'被全网群嘲。后吴亦凡发行歌曲《大碗宽面》主动玩梗，反而扭转口碑。这个事件本身也成为梗文化的经典案例。"
+  },
+  {
+    "term": "皮皮虾我们走",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "2017年现象级网络梗。起源于游戏《舰队Collection》和《口袋妖怪》的'拉链鬼'结合体，'XXX我们走'句式（如'皮皮虾我们走'、'皮皮猪我们走'）。配合皮皮虾表情包在全网病毒式传播。"
+  },
+  {
+    "term": "局座张召忠",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "军事评论家张召忠，B站顶流up主。因其生前的各种神奇预言（海带缠潜艇、雾霾防导弹等）被戏称为'战略忽悠局局长'。局座本人非常亲和，甚至亲自在B站发视频、直播，被弹幕刷屏'局座好'。"
+  },
+  {
+    "term": "窃格瓦拉",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "周某，因偷窃电动车被抓后在接受采访时放话：'打工是不可能打工的，这辈子都不可能打工的'、'里面个个都是人才，说话又好听，我超喜欢里面'。因造型像切格瓦拉而得名'窃格瓦拉'。出狱后成为网红，名言被鬼畜反复使用。"
+  },
+  {
+    "term": "谢广坤/乡村爱情",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "《乡村爱情》中谢广坤因极其作妖的性格成为鬼畜区素材，'我是象牙山CEO'、'刘能！你啥意思！'等台词配合魔性配乐。谢广坤的歪嘴、刘能的结巴、赵四的抽搐三巨头在鬼畜区都有大量二创作品。"
+  },
+  {
+    "term": "你吼那么大声干什么",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "出自TVB电视剧《读心神探》中林保怡的台词'你吼那么大声干什么嘛！'配合'你有心理问题！'等分析成为表情包和鬼畜热门。TVB台词常见的夸张表演风格使其成为永不过时的素材。"
+  },
+  {
+    "term": "马赛克/刘波",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "网剧《万万没想到》中白客饰演的王大锤，以及《报告老板》系列中的各种角色。'我叫王大锤，万万没想到——'、'相信用不了多久我就会升职加薪当上总经理出任CEO迎娶白富美走向人生巅峰，想想还有点小激动'。大量台词成为鬼畜经典。"
+  },
+  {
+    "term": "德国boy",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "来自德国少年Desh在电脑前抱怨游戏主机（Xbox vs PS3）的咆哮视频。'This is bullshit！'、'F**k！'、'Why you do this？！'因情绪极度饱满、哭腔十足成为鬼畜区经典素材。空耳'俺はドイツだ！'之类的日文空耳版本也广为流传。"
+  },
+  {
+    "term": "铁锅炖自己",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "快手网红'农村四哥'的'铁锅炖自己'等农村整活内容因过于真实和土味被B站网友搬运转译。配合'奥利给'等喊麦文化形成了B站独特的土味考核与鬼畜二创体系。"
+  },
+  {
+    "term": "面筋哥",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "程书林，因烤面筋为生的流浪歌手，在选秀节目中唱原创歌曲《烤面筋》，独特的嘶吼唱腔和真诚的表演感动（笑倒）了无数网友。'烤面筋！我的烤面筋！你可知道我爱你！'成为鬼畜区经典素材。"
+  },
+  {
+    "term": "波澜壮阔",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "源自B站UP主Bottle的原创鬼畜作品《波澜壮阔》系列。以三国演义诸葛亮和王朗为素材，加入电音和节奏，把'我从未见过有如此厚颜无耻之人'鬼畜成电子舞曲。代表了鬼畜区黄金时代的技术流。"
+  },
+  {
+    "term": "全部都给老子爬",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "一名四川网友在KTV唱《死了都要爱》时破音怒吼'全部都给老子爬！'的视频被鬼畜二创。因情绪到位、方言接地气而走红，后被封为'年度最佳破音'。"
+  },
+  {
+    "term": "敢杀我的马",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "电影《西游降魔篇》中孙悟空（黄渤饰）的台词：'你敢杀我的马？！'因语气夸张且充满戏剧性成为鬼畜常用素材。配合《一生所爱》BGM的鬼畜作品尤其感人。"
+  },
+  {
+    "term": "我全都要/九品芝麻官",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "周星驰电影《九品芝麻官》中'我全都要'名场面。剧中'豹子头'（徐锦江饰）的'我全都要'被截取为鬼畜用语。同时剧中的'骂人是一门艺术'、'你八府巡按'等也常出现在鬼畜区。"
+  },
+  {
+    "term": "斗图/熊猫人",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "金馆长（崔成国）在韩国电影《金馆长对金馆长对金馆长》中的魔性笑脸，是中国表情包文化的奠基人之一。配合'斗图开始'、'我用表情包砸死你'成为早期聊天室文化的重要符号，B站鬼畜区也常拿来调音。"
+  },
+  {
+    "term": "你干嘛哈哈哎哟",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "蔡徐坤的歌曲《Home》中的表演片段，因一段即兴舞蹈中的'你干嘛哈哈哎哟'被空耳，配合鸡你太美系列走红。后来成为B站鬼畜新流派的代表素材。"
+  },
+  {
+    "term": "汤姆猫/汤姆和杰瑞",
+    "category": "B站鬼畜",
+    "source": "manual",
+    "explanation": "《猫和老鼠》中汤姆猫的各种惨叫声被B站UP主提取出来做鬼畜调音。尤其是汤姆的'啊——！'惨叫声、被砸扁的声音、吉他被弹的声音等，是鬼畜区经典的乐器素材。"
+  },
+  {
+    "term": "嘉然",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "A-SOUL成员之一，字节跳动旗下的虚拟偶像女团。嘉然因其元气可爱的性格和顶级舞蹈能力走红。粉丝自称'嘉心糖'。经典名场面包括：读逆天小作文时忍住不哭、和向晚的'过期糖'互动、'乃琳你带我走吧'等。粉丝圈名言：'然然的狗'（自称狗的忠诚粉丝）。"
+  },
+  {
+    "term": "向晚",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "A-SOUL成员，定位为元气少女/小恶魔系VTB。因中之人事件（声优换人风波）引发巨大争议，'向晚中之人'一度成为圈内外热议话题。名言：'你好，我是向晚！'、'大家注意身体哦'。粉丝名'顶碗人'，源于她喜欢顶碗（平衡挑战）。"
+  },
+  {
+    "term": "贝拉",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "A-SOUL队长兼舞蹈担当，专业芭蕾出身。性格温柔但严格，'大姐姐'系定位。经典梗包括'不是拉姐拉'（对质疑的回应）、'31岁'（年龄梗被反复拉踩）、'贝极星'（粉丝名）。因其舞蹈实力被尊为A-SOUL舞蹈天花板。"
+  },
+  {
+    "term": "珈乐",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "A-SOUL前成员，酷飒中性风格。2022年珈乐毕业事件引发了A-SOUL史上最大的粉丝抗议（中之人待遇问题），'珈乐毕业'成为VTB圈标志性事件，直接导致字节和乐华被大量粉丝声讨。粉丝名'奶淇琳'。"
+  },
+  {
+    "term": "乃琳",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "A-SOUL成员，定位为知性优雅的大姐姐/知识型VTB。以说话慢条斯理、金句频出闻名。名言'你们有没有这样的经历'成为经典开场白。粉丝名'奶淇琳'（与珈乐共享同款粉丝名，颇有渊源）。"
+  },
+  {
+    "term": "A-SOUL",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "字节跳动和乐华娱乐联合推出的虚拟偶像女团，成员包括嘉然、向晚、贝拉、珈乐（已毕业）、乃琳。A-SOUL的崛起标志着中文VTB从'小圈子'走向'大众出圈'。围绕中之人待遇、技术力、运营策略的争议也让它成为VTB圈讨论度最高的团体。"
+  },
+  {
+    "term": "嘉心糖",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "嘉然粉丝的自称。嘉心糖因狂热的忠诚度和'反黑'能力闻名。经典行为：到处刷'然的然'、在评论区形成'好评氛围组'、以及著名的'嘉心糖嘉心糖嘉心糖'式接龙。出圈到被其他VTB粉丝称为'最团结的粉丝群体'。"
+  },
+  {
+    "term": "顶碗人",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "向晚粉丝名。源自向晚在直播中经常挑战顶碗（平衡碗在头上），'顶碗人'即支持向晚的粉丝。与嘉心糖之间有过经典的'顶碗人和嘉心糖的战争'（粉丝圈互怼），被戏称为'字节内战'。"
+  },
+  {
+    "term": "然然的狗",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "嘉然粉丝的自称。源于嘉然在直播中开玩笑说'你们是我的狗吗'，结果弹幕齐刷刷刷'是！汪汪！'。'然然的狗'从此成为嘉然粉丝的标志性自称，出圈到成为VTB圈的一个文化符号。"
+  },
+  {
+    "term": "七海Nana7mi",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "VR（VirtuaReal）所属VTB，性格豪爽、唱歌好听、会打游戏。因标志性的'海子姐'称呼和'啊啊啊啊啊'的尖叫式反应出名。名场面：直播时被弹幕破防、唱歌时深情变喜剧。粉丝名'海螺'。"
+  },
+  {
+    "term": "星瞳",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "腾讯旗下虚拟偶像，以超高质量舞蹈3D模型和技术力闻名。定位为'数字人'而非传统VTB。凭借顶级动捕和渲染技术成为VTB舞蹈区天花板，代表作《恋爱循环》舞蹈播放量破千万。"
+  },
+  {
+    "term": "hanser",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "个人势VTB/唱见，以独特的'憨色'人设和神级歌力闻名。经典梗：'hanser不会唱歌'（反讽她其实非常会唱）、直播打游戏时的暴躁发言与平日的温柔形成反差萌。与泠鸢、山新等是多年好友。"
+  },
+  {
+    "term": "泠鸢yousa",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "个人势VTB/唱见，声线温柔治愈。代表作《飞鸟》等古风歌曲广受欢迎。是中文VTB圈早期代表性人物之一（2018年前后开始活动）。性格腼腆但直播时常常开车，形成强烈反差萌。"
+  },
+  {
+    "term": "Pekora/兔田佩克拉",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "日本hololive三期生VTB，以标志性的'コン'（kon/peko）口癖和兔子形象闻名。风格是元气+腹黑的'坏笑兔子'人设。名言：'Peko！'、'Konpeko！'、'我兔田佩克拉可不是好惹的！'。与Aqua的'Pekomiko'组合曾是hololive最甜CP。"
+  },
+  {
+    "term": "湊阿库娅/Aqua",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "日本hololive二期生，'女仆系'VTB。以超强游戏力（尤其APEX）和慵懒声线闻名。经典名场面包括：APEX比赛中一穿三后的'Aqua~ro↑'、和Pekora的贴贴互动'Pekomiko'。虽然表面是乖巧女仆，但直播时非常真实和慵懒。"
+  },
+  {
+    "term": "白上吹雪/吹雪",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "日本hololive一期生，银发狐狸形象，是hololive在中国人气最高的VTB之一。以高智商+小恶魔系人设闻名。经典梗：'Konkon！'、'吹雪的脑子'（她经常直播中突然说出细思极恐的话）、和夏哥的'贴贴'。"
+  },
+  {
+    "term": "绊爱/Kizuna AI",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "世界上第一个VTB（2016年出道），被誉为'虚拟主播的始祖'。以标志性的'Hello, World!'开场白和人工智障(人工知能)人设走红全球。虽然2022年宣布无限期停止活动，但其开创性地位无可替代。"
+  },
+  {
+    "term": "hololive",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "日本Cover株式会社旗下的VTuber运营品牌，是当今全球最大的VTuber企划。旗下有hololive JP（日本本部）、hololive EN（英语地区）、hololive ID（印尼）等分支。在中国VTB圈拥有大量粉丝，但因2020年的'hololive中国事件'（桐生可可争议），大量中国粉丝转投本土VTB。"
+  },
+  {
+    "term": "VirtuaReal/VR",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "由中国B站和日本索尼音乐旗下animate共同推出的VTuber企划。旗下VTB包括七海Nana7mi、阿梓、小可等。是中文VTB圈规模最大的企划之一，与A-SOUL（字节）形成'两大阵营'格局。"
+  },
+  {
+    "term": "VTB/虚拟主播",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "Virtual YouTuber的缩写，指使用虚拟形象进行直播/视频创作的内容创作者。中文VTB圈从2018年前后开始发展，经历了绊爱时代、hololive时代、A-SOUL时代、百花齐放时代。VTB文化形成了独特的'管人'（管人痴，沉迷VTB的人）亚文化圈。"
+  },
+  {
+    "term": "管人/管人痴",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "'管人'源自'管人痴'的简称，指沉迷VTB/VTuber的粉丝。带有自嘲和互嘲的双重含义。'管人'圈有自己的黑话体系（单推/DDP/米线/切片/魂号/中之人等）。经典名言：'管人痴是这样的'（用于自我吐槽）。"
+  },
+  {
+    "term": "单推",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "日语'単推し'的直接借用，指在VTB群体中只喜欢某一个人（不推崇DD）。'单推宣言'=表示只粉这一个。与之相反的是'DD'。"
+  },
+  {
+    "term": "DD",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "日语'誰でも大好き'（谁都喜欢）的缩写。指同时喜欢多个VTB的粉丝。'DD宣言'=我喜欢所有人。DD在VTB圈中是被调侃的对象：'DD是屑'、'DD是没有未来的'。但实际上绝大多数VTB粉丝都是隐蔽的DD。"
+  },
+  {
+    "term": "中之人",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "指VTB角色背后的真人表演者/声优。中文VTB圈对'中之人'的态度极其复杂——既想知道又不想知道。'中之人毕业'=真人离开了这个角色。向晚中之人事件、珈乐毕业事件都是围绕中之人的重大争议。"
+  },
+  {
+    "term": "魂号",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "VTB中之人的个人社交账号。挖掘魂号是VTB粉丝圈的禁忌行为（被视为侵犯隐私）。'出魂'=中之人的个人信息被曝光。圈内共识：尊重魂号，虚拟和现实分开。"
+  },
+  {
+    "term": "切片",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "将从VTB直播中截取的精彩片段剪辑成短视频，称为'切片'。'切片man'=专门做VTB切片剪辑的UP主。优秀切片是VTB出圈的重要方式。'切片标题比直播有趣'是经典吐槽。"
+  },
+  {
+    "term": "米线",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "'底线'的谐音梗，起源于VTB圈（有说嘉然首创）。'你的米线呢？'=你的底线在哪？'米线都被你吃没了'=毫无底线。后出圈到整个网络。"
+  },
+  {
+    "term": "毕业",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "VTB停止活动/退出企划。亲切的说法是'毕业'（像学校毕业一样走向新阶段），悲伤点的说法是'引退'。珈乐毕业是中文VTB史上最重大的毕业事件之一。"
+  },
+  {
+    "term": "Pekomiko",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "Pekora（兔田佩克拉）和Miko（樱巫女）的CP组合名。曾是hololive最火的CP之一，但后来因两人互动减少，被粉丝调侃'Pekomiko已经死了'。'Pekomiko复活赛什么时候打？'成为经典梗。"
+  },
+  {
+    "term": "贴贴",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "中文网对日文'てぇてぇ'（tte-te，亲密可爱之意）的音译。用于形容VTB之间关系亲密、互动甜美的场景。'贴贴！'是VTB直播弹幕中最高频的词汇之一。"
+  },
+  {
+    "term": "SC",
+    "category": "VTB梗",
+    "source": "manual",
+    "explanation": "Super Chat的缩写，即直播中的付费留言/打赏。'感谢SC！'是VTB对打赏的感谢语。'SC环节'=VTB念付费留言的时间，也是节目效果最密集的部分。"
+  },
+  {
+    "term": "芳文社",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "日本漫画出版社，以制作'轻百合+萌系日常'作品闻名。《轻音少女》《摇曳露营》《请问您今天要来点兔子吗》等。'芳文社'在游戏/动漫圈成为'治愈系萌番'的代名词。经典：'芳文社是神！'。"
+  },
+  {
+    "term": "魂系游戏",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "以FromSoftware旗下《黑暗之魂》《艾尔登法环》《只狼》等游戏为代表的硬核动作游戏类型。特点：高难度、碎片化叙事、死后复活、'宫崎英高的阴谋'。'魂系玩家'成为'愿意受虐'的游戏爱好者代名词。"
+  },
+  {
+    "term": "宫崎英高",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "FromSoftware社长，《黑暗之魂》《只狼》《艾尔登法环》的制作人。玩家又爱又恨的对象：'宫崎英高又在为难玩家了'、'老贼的恶意'。每次他笑的时候，玩家就知道又有新的受苦方式了。"
+  },
+  {
+    "term": "老头环",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "《艾尔登法环》（Elden Ring）的中文爱称。'老头'指游戏中的角色设定，'环'指法环。'老头环yyds'、'老头环玩了200小时还没通关'。"
+  },
+  {
+    "term": "塞尔达/旷野之息",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "任天堂Switch上的《塞尔达传说：旷野之息》。被誉为'开放世界游戏的天花板'。'塞尔达是天'是任豚圈的最高评价。其续作《王国之泪》同样封神。经典梗：'买Switch就是为了玩塞尔达，其他都是送的'。"
+  },
+  {
+    "term": "任天堂/任豚",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "任天堂是日本游戏公司（Switch/马力欧/塞尔达/宝可梦）。'任豚'是索尼/微软粉丝对任天堂粉丝的蔑称，后来被任天堂粉丝自嘲使用。'任天堂是世界的主宰'是圈内梗。经典争议：任天堂法务部（最强法务部）。"
+  },
+  {
+    "term": "索尼/索狗",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "PlayStation玩家之间的互称。'索狗'与'任豚'、'软饭'（微软粉丝）是游戏主机战争三大阵营的互相攻击词汇。'索尼大法好'、'Sony yes'是索尼粉丝的口头禅。"
+  },
+  {
+    "term": "微软/软饭",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "Xbox玩家的自嘲称呼。Xbox在中国市场相对弱势，'软饭'即'软饭硬吃'——虽然机器卖得少但我金会员会免香。'XGP真香'（Xbox Game Pass订阅制）是微软最大的王牌。"
+  },
+  {
+    "term": "GTA6",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "《侠盗猎车手6》（Grand Theft Auto VI）。游戏圈的'有生之年'系列，玩家等了将近十年。2023年终于放出预告片，但实际发售还要更久。'GTA6出了我就结婚'成为游戏玩家的经典flag。"
+  },
+  {
+    "term": "爆头",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "FPS游戏中击中敌方头部造成一击毙命的操作。'一枪爆头'=神级操作。衍生梗：'我被爆头了'（用于生活中的倒霉事）。"
+  },
+  {
+    "term": "白给",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "FPS游戏中免费送人头的行为，尤其指《CS:GO》中不打战术直接出去送。'白给少年'、'这局白给了'、'队友又在白给'。后泛化为任何白费功夫的行为。"
+  },
+  {
+    "term": "自瞄/透视",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "FPS游戏中最常见的两种作弊方式。自瞄=自动瞄准敌人，透视=隔墙看到敌人位置。'你开自瞄了吧？'是游戏中最高的'称赞'（其实是骂你开挂）。'我去自瞄了'也用于自嘲菜。"
+  },
+  {
+    "term": "大逃杀/吃鸡",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "《绝地求生》（PUBG）带火的游戏类型。100人跳伞到一个岛上互相厮杀，最后存活的人'吃鸡'。'吃鸡'文化衍生出大量梗：'伏地魔'（趴在地上阴人）、'幻影坦克'（躲在草丛里）、'天命圈'（安全区刷在自己这边）。"
+  },
+  {
+    "term": "伏地魔",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "吃鸡游戏中全程趴在地上一动不动，靠阴人取胜的玩家。'伏地魔'源于《哈利波特》角色。'你永远不知道伏地魔在哪儿'。嘲笑点是：你吃鸡了吗？没有，我伏地到了第二名。"
+  },
+  {
+    "term": "天命圈",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "吃鸡游戏中安全区正好刷在自己所在地点，不需要跑毒。'天选之人'、'圈运好'。与'天谴圈'（安全区永远离你千里之外）相对。'这不是实力，这是天命！'。"
+  },
+  {
+    "term": "水友/朋友",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "游戏主播对观众的称呼。'水友赛'=主播和观众一起打的比赛。'感谢水友的飞机'。'水友'和'老铁'（快手系）、'家人们'（抖音系）相当。"
+  },
+  {
+    "term": "炸鱼",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "高段位玩家去低段位虐菜的行为。'去低分段炸鱼'。炸鱼是游戏圈道德争议话题——你说他不对吧，他没开挂；你说他对吧，他欺负新手。'炸鱼塘'。"
+  },
+  {
+    "term": "代练/代打",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "花钱请高手登录自己的账号帮忙打上高段位。'找代练'、'代练上来的'。代练的效果：你点开他的战绩一片飘绿，但自己一打就原形毕露。'代练来了'、'代练走了'被用于嘲讽王者段位的手残玩家。"
+  },
+  {
+    "term": "掉分/掉段",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "故意输掉比赛降低段位。原因可能是：想和低段位朋友一起排、想在低段位炸鱼、嘲讽别人时'我掉分来虐你的'。'掉分车队'。"
+  },
+  {
+    "term": "三连败/连败",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "连续输掉多场比赛。'三连败就下播'是主播经典flag。'系统局'=ELO机制让你连败。'ELO'（隐藏分匹配机制）被广泛指责是连败的罪魁祸首。"
+  },
+  {
+    "term": "ELO/系统局",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "游戏匹配系统的隐藏分机制。ELO会强行让玩家的胜率趋近50%，所以当你连胜后系统会给你匹配菜鸡队友。'被ELO制裁了'=不是我菜，是系统让我输。'系统局'=被系统安排的明明白白。"
+  },
+  {
+    "term": "手残",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "手指操作不灵活，打游戏反应慢。'手残党'、'手残救星'（形容简单模式的游戏）。'我不是菜，我只是手残'。'手残+嘴强王者'=操作不行但理论满分。"
+  },
+  {
+    "term": "嘴强王者",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "嘴上说得很厉害（理论满分），实际打起来很菜的人。'嘴强王者，手残青铜'。类似于'键盘侠'的游戏特化版本。"
+  },
+  {
+    "term": "模拟器玩家",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "用电脑模拟器玩手机游戏的玩家。在射击类手游中，模拟器玩家可以用键鼠精确瞄准，被手机玩家视为'作弊'。'模拟器狗'、'模拟器匹配模拟器'（公平匹配。"
+  },
+  {
+    "term": "陀螺仪",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "手机射击游戏通过手机重力感应来控制瞄准的功能。'陀螺仪玩家'=靠晃手机瞄准的高手。'三指陀螺仪'=三个手指操作的高级技巧。'陀螺仪yyds'。"
+  },
+  {
+    "term": "一键连招",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "通过宏或第三方工具将一套复杂的连招绑定到一个按键上。'一键连招玩家'被手搓玩家鄙视。'手搓'=纯手动搓招，是硬核玩家的尊严。"
+  },
+  {
+    "term": "APEX/派派",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "《Apex英雄》，大逃杀类FPS游戏。因其快节奏、复活机制和技能配合被广泛喜爱。'派派启动器'、'今天你派了吗'。游戏圈梗：'APEX是最好的游戏——如果你能连上服务器的话'（吐槽EA服务器差）。"
+  },
+  {
+    "term": "启动器",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "原指游戏平台（Steam/Epic/Ubisoft Connect等），后用于调侃。'Steam启动器'=有些游戏在Steam启动后还要再开自己的启动器（如R星游戏）。'又双叒叕更新启动器了'。"
+  },
+  {
+    "term": "喜加一",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "Steam/Epic等平台免费送游戏时，玩家领取后库中的游戏数量+1，但从来不玩。'Epic又在喜加一了'、'喜加一玩家'=只领免费游戏从来不玩的玩家。'喜加一，然后吃灰'。"
+  },
+  {
+    "term": "蒸汽/Steam",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "Valve公司的游戏分发平台，PC游戏玩家不可或缺的平台。Steam在中国俗称'蒸汽平台'（完美世界代理的国服版），但玩家更习惯用国际版。'Steam启动！'、'V社数数不会数到3'（Valve从来不出第3部作品）。"
+  },
+  {
+    "term": "Epic/每周免费",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "Epic Games Store（EGS），每周送游戏。'Epic爸爸又送游戏了'、'每周喜加一'。槽点：Epic平台功能不全、没有创意工坊、没有Steam的社区体验。但'免费就是香！'。"
+  },
+  {
+    "term": "育碧/土豆服务器",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "法国游戏公司育碧（Ubisoft），以开放世界公式化（'育碧罐头'）和糟糕的服务器质量闻名。'育碧的服务器是用土豆做的'、'育碧罐头'（指内容丰富的开放世界但公式化）。'买Bug送游戏'。"
+  },
+  {
+    "term": "波兰蠢驴/CDPR",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "波兰游戏公司CD Projekt Red，代表作《巫师3》《赛博朋克2077》。被玩家亲切称为'波兰蠢驴'，起因是CDPR把《巫师3》的DLC做得比某些完整游戏还丰富，'蠢到不会赚钱'。后来2077翻车后语义变了：'真的蠢'。"
+  },
+  {
+    "term": "赛博朋克2077/2077",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "CDPR开发的赛博朋克题材开放世界RPG。2020年发售时因海量Bug和主机版严重优化问题引发巨大争议，被戏称为'诈骗2077'。后续几年通过不断更新逐渐修复口碑。'2077'本身已成为'宣传和成品不符'的代名词。"
+  },
+  {
+    "term": "原批",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "对《原神》玩家的蔑称，起源于2020年原神上线时因'抄袭塞尔达'争议引发的激烈骂战。虽然'原批'是贬义称呼，但被部分原神玩家自嘲使用。'原批也是批'是著名的对喷梗。围绕原神的标签战争至今未停。"
+  },
+  {
+    "term": "开放世界/OP",
+    "category": "游戏梗",
+    "source": "manual",
+    "explanation": "开放世界游戏成为当代3A游戏的标配。'开放世界+公式化清单'被诟病为'罐头游戏'。'不是开放世界我不玩'=玩家对开放世界的渴望。'OP'=开放世界的缩写，也容易歧义为原神。"
+  }
+]

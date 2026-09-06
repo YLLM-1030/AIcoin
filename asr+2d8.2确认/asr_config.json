@@ -1,0 +1,10 @@
+{
+  "inputs": [
+    {
+      "id": "main",
+      "name": "我的麦克风",
+      "source": "win://1",
+      "out_bridge": 18680
+    }
+  ]
+}

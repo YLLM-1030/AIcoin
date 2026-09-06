@@ -1,0 +1,26 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "科技感近战法师.moc3",
+		"Textures": [
+			"科技感近战法师.4096/texture_00.png"
+		],
+		"Physics": "科技感近战法师.physics3.json",
+		"DisplayInfo": "科技感近战法师.cdi3.json"
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		},
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": [
+				"ParamEyeLOpen",
+				"ParamEyeROpen"
+			]
+		}
+	]
+}

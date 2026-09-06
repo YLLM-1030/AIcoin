@@ -1,0 +1,72 @@
+# ============ 模型权重 / 检查点（不入库） ============
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.onnx
+*.gguf.*
+ckpt_*/
+*_q8.gguf
+*_q4.gguf
+
+# ============ 数据库 / 向量库（运行时生成） ============
+*.db
+*.sqlite
+*.sqlite3
+memories.db
+
+# ============ 模型缓存（HuggingFace / sentence-transformers） ============
+embeddings/
+*/embeddings/
+**/embeddings/**
+__pycache__/.no_exist/
+.no_exist/
+
+# ============ Python ============
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+ENV/
+
+# ============ 大语料 / 训练中间产物（按需取舍） ============
+# 若某些 .txt 语料过大（如桌面语料目录），取消下行注释以忽略
+# *.大语料.txt
+*.log
+tmp/
+temp/
+
+# ============ IDE / 系统 ============
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ============ 依赖 / 构建 ============
+node_modules/
+build/
+dist/
+*.sublime-project
+*.sublime-workspace
+
+# ============ 备份 / 副本 / 大目录（本次显式排除，防误带） ============
+# 以下目录体积巨大且非源码（模型权重 / 训练数据 / 备份），已直接忽略：
+asr训练/                                      # 1.8G：训练数据 / checkpoint（esc50.zip 等）
+备份代码/                                     # 备份目录
+输入中心/长期记忆/长期记忆模型存放/            # 791M：bge embedding 模型权重
+asr+2d8.2确认/配置文件/emotion/embeddings/     # 529M：情绪 embedding 模型
+# 嵌套第三方仓库（已作为 gitlink 误加，排除其独立 .git，避免变坏子模块）：
+迷你硬币主脑训练/05_测试脚本/DLUT-Emotionontology/
+
+# 根下其它可能的备份/实验目录（如存在则按需取消注释）：
+# asr+2d/
+# 迷你硬币主脑训练 - 副本/
+# backend*/
+
+# ============ 大词库 / 数据（按需取舍） ============
+# 情感词汇.csv（1.5M 条）若不想入库，取消下行注释：
+# 情感词汇.csv

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mini Coin Live2D Puppet</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }
+#l2dContainer {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px; height: 700px; pointer-events: none;
+}
+#l2dContainer canvas { width: 100%; height: 100%; }
+
+#loading {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: #888; font: 14px sans-serif; z-index: 10;
+}
+#btnPanel {
+  position: fixed; top: 50%; left: 8px; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 4px; z-index: 999;
+  pointer-events: none;
+}
+#btnPanel > * { pointer-events: auto; }
+#btnPanel button {
+  padding: 4px 10px; border: 1px solid #555; border-radius: 3px;
+  background: rgba(30,30,30,0.85); color: #ccc; cursor: pointer; font-size: 11px; white-space: nowrap;
+}
+#btnPanel button:hover { background: rgba(60,60,60,0.9); color: #fff; }
+#btnPanel button.active { border-color: #fb8; background: rgba(60,40,20,0.9); }
+
+/* 诊断面板 */
+#diag {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 100; background: rgba(0,0,0,0.85); color: #0f0;
+  font: 13px monospace; padding: 16px 24px; border-radius: 8px;
+  border: 1px solid #0f0; max-width: 70vw; text-align: left;
+  white-space: pre-wrap; line-height: 1.6;
+}
+#diag.error { color: #f44; border-color: #f44; }
+#diag.info { color: #0f0; border-color: #8f8; }
+</style>
+</head>
+<body>
+<div id="diag">加载中...</div>
+<div id="l2dContainer"></div>
+
+<div id="btnPanel">
+  <button onclick="testEmotion('neutral')" data-emotion="neutral">默认</button>
+  <button onclick="testEmotion('happy')" data-emotion="happy" style="border-color:#fb8">😊开心</button>
+  <button onclick="testEmotion('sad')" data-emotion="sad" style="border-color:#88f">😢悲伤</button>
+  <button onclick="testEmotion('angry')" data-emotion="angry" style="border-color:#f44">😠生气</button>
+  <button onclick="testEmotion('surprise')" data-emotion="surprise" style="border-color:#ff8">😲惊讶</button>
+  <button onclick="testEmotion('fear')" data-emotion="fear" style="border-color:#c8f">😨焦虑</button>
+  <button onclick="testEmotion('think')" data-emotion="think" style="border-color:#8cf">🤔好奇</button>
+  <button onclick="testEmotion('confused')" data-emotion="confused" style="border-color:#f8c">😵困惑</button>
+  <button onclick="resetEmotion()">重置</button>
+</div>
+
+<script src="lib/live2dcubismcore.min.js"></script>
+<script src="lib/l2d-widget.min.js"></script>
+<script>
+// ── 诊断日志 ──
+let _diagLines = [];
+function diag(msg) {
+  _diagLines.push(msg);
+  const el = document.getElementById('diag');
+  if (el) el.textContent = _diagLines.join('\n');
+  console.log('[L2D]', msg);
+}
+function diagErr(msg) {
+  _diagLines.push('ERROR: ' + msg);
+  const el = document.getElementById('diag');
+  if (el) { el.textContent = _diagLines.join('\n'); el.className = 'error'; }
+  console.error('[L2D]', msg);
+}
+function diagInfo(msg) {
+  _diagLines.push(msg);
+  if (_diagLines.length > 15) _diagLines = _diagLines.slice(-15);
+  const el = document.getElementById('diag');
+  if (el) { el.textContent = msg; el.className = 'info'; }
+}
+
+// ── 表情配件 key ──
+const EXPR_PARAMS = { yanjing:'Param10', huangzhang:'Param11', wenxiang:'Param12', guaiqiao:'Param23', baidagua:'Param18' };
+
+// ── 律度 → 参数幅度缩放 ──
+function scaleVal(base, intensity, lo=1.0, hi=4.0) {
+  if (intensity < lo) return 0;
+  const t = Math.min(1.0, (intensity - lo) / (hi - lo));
+  return base * t;
+}
+
+// ── 7 情绪完整定义 ──
+// 值 = 律度 4.0 时的最大幅度（由 scaleVal 自动缩放）
+const EMOTIONS = {
+  neutral: {
+    set: {
+      ParamAngleX:0, ParamAngleY:0, ParamAngleZ:0,
+      ParamEyeLOpen:1, ParamEyeROpen:1,
+      ParamEyeLSmile:0, ParamEyeRSmile:0,
+      ParamEyeBallX:0, ParamEyeBallY:0,
+      ParamBrowLY:0, ParamBrowRY:0,
+      ParamBrowLX:0, ParamBrowRX:0,
+      ParamBrowLAngle:0, ParamBrowRAngle:0,
+      ParamBrowLForm:0, ParamBrowRForm:0,
+      ParamMouthForm:0, ParamMouthOpenY:0,
+      ParamCheek:0,
+      ParamBodyAngleX:0, ParamBodyAngleY:0, ParamBodyAngleZ:0,
+      Param10:0, Param11:0, Param12:0, Param23:0, Param18:0,
+    },
+    // 注意：ParamBreath 不在此列表中，由 idleLoop 独立管理
+  },
+
+  // 😊 快乐：眯眯眼 + 歪头右 + 身体前倾 + 脸红
+  happy: {
+    set: {
+      // 眼睛: 眯眯眼月牙形
+      ParamEyeLSmile: 0.7, ParamEyeRSmile: 0.7,
+      ParamEyeLOpen: 0.7, ParamEyeROpen: 0.7,
+      // 眉毛: 微微上扬
+      ParamBrowLY: 0.3, ParamBrowRY: 0.3,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      // 嘴巴: 微笑弧线
+      ParamMouthForm: 0.5,
+      ParamMouthOpenY: 0.05,
+      // 脸颊: 健康红晕
+      ParamCheek: 0.4,
+      // 头部: 向右歪 + 微低
+      ParamAngleZ: 6,
+      ParamAngleX: 3,
+      ParamAngleY: 0,
+      // 身体: 前倾 + 微侧
+      ParamBodyAngleX: 5,
+      ParamBodyAngleY: 3,
+      ParamBodyAngleZ: 0,
+      // 眼神
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      // 眉毛变形
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      // 配件
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0.3, Param18: 0,
+    },
+  },
+
+  // 😢 悲伤：低头 + 八字眉 + 眼珠下看 + 白大褂
+  sad: {
+    set: {
+      // 眼睛: 半闭，下垂无力
+      ParamEyeLOpen: 0.5, ParamEyeROpen: 0.5,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      // 眼珠: 向下看
+      ParamEyeBallX: 0, ParamEyeBallY: -0.2,
+      // 眉毛: 内端上挑 = 八字眉
+      ParamBrowLAngle: 15, ParamBrowRAngle: 15,
+      ParamBrowLY: -0.15, ParamBrowRY: -0.15,
+      // 嘴巴: 扁嘴
+      ParamMouthForm: -0.3,
+      ParamMouthOpenY: -0.1,
+      // 脸颊: 淡淡忧伤红晕
+      ParamCheek: 0.1,
+      // 头部: 低头 + 微偏（回避视线）
+      ParamAngleX: -6,
+      ParamAngleY: 4,
+      ParamAngleZ: 0,
+      // 身体: 后缩 + 无力侧倾
+      ParamBodyAngleX: -5,
+      ParamBodyAngleY: 0,
+      ParamBodyAngleZ: -3,
+      // 眉毛变形
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      // 配件: 白大褂 = 抱住自己
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    },
+  },
+
+  // 😠 生气（傲娇）：扭头 + 脸红 + 压低眉 + 偷瞄
+  angry: {
+    set: {
+      // 眼睛: 睁着瞪
+      ParamEyeLOpen: 0.8, ParamEyeROpen: 0.8,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      // 眼珠: 往扭头方向偷瞄
+      ParamEyeBallX: 0.3, ParamEyeBallY: 0,
+      // 眉毛: V 字压低
+      ParamBrowLY: -0.6, ParamBrowRY: -0.6,
+      ParamBrowLAngle: -10, ParamBrowRAngle: -10,
+      // 嘴巴: 微嘟（别扭嘴）
+      ParamMouthForm: 0.1,
+      ParamMouthOpenY: 0.03,
+      // 脸颊: 通红（傲娇核心）
+      ParamCheek: 0.6,
+      // 头部: 转向一边
+      ParamAngleX: 0,
+      ParamAngleY: 12,
+      ParamAngleZ: -5,
+      // 身体: 也转过去 + 微后仰
+      ParamBodyAngleX: -3,
+      ParamBodyAngleY: 8,
+      ParamBodyAngleZ: 0,
+      // 眉毛变形
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      // 配件
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 0,
+    },
+  },
+
+  // 😲 惊讶：瞪大眼 + 高眉 + 嘴微张 + 蚊香眼
+  surprise: {
+    set: {
+      // 眼睛: 瞪到最大
+      ParamEyeLOpen: 1, ParamEyeROpen: 1,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      // 眉毛: 高高抬起
+      ParamBrowLY: 0.7, ParamBrowRY: 0.7,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      // 嘴巴: 微张 "诶?!" 嘴型
+      ParamMouthForm: 0,
+      ParamMouthOpenY: 0.15,
+      // 头部: 微后仰
+      ParamAngleX: -4,
+      ParamAngleY: 0,
+      ParamAngleZ: 0,
+      // 身体: 后仰
+      ParamBodyAngleX: -5,
+      ParamBodyAngleY: 0,
+      ParamBodyAngleZ: 0,
+      // 眼神
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamCheek: 0,
+      // 眉毛变形
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      // 配件: 蚊香眼（轻→中度看强度）
+      Param10: 0, Param11: 0,
+      Param12: 0.5,
+      Param23: 0, Param18: 0,
+    },
+  },
+
+  // 😨 焦虑：慌张 + 眉毛高挑 + 眼珠乱飘 + 身体缩
+  fear: {
+    set: {
+      // 眼睛: 睁着但紧张
+      ParamEyeLOpen: 0.85, ParamEyeROpen: 0.85,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      // 眉毛: 内端高挑 + 整体抬起
+      ParamBrowLAngle: 20, ParamBrowRAngle: 20,
+      ParamBrowLY: 0.5, ParamBrowRY: 0.5,
+      // 嘴巴: 紧张微张
+      ParamMouthForm: -0.1,
+      ParamMouthOpenY: 0.03,
+      // 头部: 微低（不敢看）
+      ParamAngleX: 4,
+      ParamAngleY: 5,
+      ParamAngleZ: 0,
+      // 身体: 后缩
+      ParamBodyAngleX: -6,
+      ParamBodyAngleY: -3,
+      ParamBodyAngleZ: 0,
+      // 眼神: 眼珠初始居中（由眼珠抖动循环接管）
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamCheek: 0,
+      // 眉毛变形
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      // 配件: 慌张表情
+      Param10: 0,
+      Param11: 0.5,
+      Param12: 0,
+      Param23: 0, Param18: 0,
+    },
+  },
+
+  // 🤔 好奇：歪头左 + 单边眉挑 + 眼珠微上 + 乖巧
+  think: {
+    set: {
+      // 眼睛: 微睁大，带点笑意
+      ParamEyeLOpen: 0.9, ParamEyeROpen: 0.9,
+      ParamEyeLSmile: 0.15, ParamEyeRSmile: 0.15,
+      // 眼珠: 微向上看
+      ParamEyeBallX: 0.1, ParamEyeBallY: 0.15,
+      // 眉毛: 不对称，左边微抬
+      ParamBrowLY: 0.25, ParamBrowRY: 0.1,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      // 嘴巴: 嘴角微翘
+      ParamMouthForm: 0.15,
+      ParamMouthOpenY: 0.03,
+      // 头部: 向左歪（经典好奇姿势）
+      ParamAngleX: 0,
+      ParamAngleY: -3,
+      ParamAngleZ: -8,
+      // 身体: 微侧
+      ParamBodyAngleX: 0,
+      ParamBodyAngleY: -5,
+      ParamBodyAngleZ: 0,
+      // 脸颊
+      ParamCheek: 0,
+      // 眉毛变形
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      // 配件: 一点乖巧
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0.2, Param18: 0,
+    },
+  },
+
+  // 😵 困惑：歪头右 + 眉毛一高一低 + 眼珠上翻
+  confused: {
+    set: {
+      // 眼睛: 微眯，费解
+      ParamEyeLOpen: 0.75, ParamEyeROpen: 0.75,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      // 眼珠: 翻向上
+      ParamEyeBallX: 0, ParamEyeBallY: 0.25,
+      // 眉毛: 不对称 — 左边压低，右边微抬
+      ParamBrowLY: -0.3, ParamBrowRY: 0.15,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      // 嘴巴: 微扁
+      ParamMouthForm: -0.15,
+      ParamMouthOpenY: 0.02,
+      // 头部: 向右歪（与好奇相反）
+      ParamAngleX: 0,
+      ParamAngleY: 5,
+      ParamAngleZ: 8,
+      // 身体: 微向右倾
+      ParamBodyAngleX: 0,
+      ParamBodyAngleY: 0,
+      ParamBodyAngleZ: 5,
+      // 脸颊
+      ParamCheek: 0,
+      // 眉毛变形
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      // 配件
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 0,
+    },
+  },
+};
+
+// ── 全局状态 ──
+let po = null;         // renderer (w.l2d)
+let isSpeaking = false;
+let currentEmotion = 'neutral';
+let currentIntensity = 0.0;
+let speakingMotion = false;  // 说话时是否在做身体联动
+
+// ── 眼珠抖动状态（焦虑用）──
+let _fearEyeShake = false;
+let _fearEyeTimer = null;
+
+function startFearEyeShake() {
+  if (_fearEyeShake) return;
+  _fearEyeShake = true;
+  _fearEyeTimer = setInterval(() => {
+    if (!_fearEyeShake) { clearInterval(_fearEyeTimer); return; }
+    if (currentEmotion !== 'fear') { stopFearEyeShake(); return; }
+    _actionParams.ParamEyeBallX = (Math.random() - 0.5) * 0.4;
+    _actionParams.ParamEyeBallY = (Math.random() - 0.5) * 0.3;
+  }, 200);
+}
+function stopFearEyeShake() {
+  _fearEyeShake = false;
+  if (_fearEyeTimer) { clearInterval(_fearEyeTimer); _fearEyeTimer = null; }
+  _actionParams.ParamEyeBallX = undefined;
+  _actionParams.ParamEyeBallY = undefined;
+}
+
+// ── 主入口 (async IIFE) ──
+(async () => {
+  try {
+    diag('1. 检查依赖...');
+    if (typeof L2D_WIDGET === 'undefined') throw new Error('L2D_WIDGET 未加载');
+    if (typeof L2D_WIDGET.createWidget !== 'function') throw new Error('createWidget 不是函数');
+    diag('2. L2D_WIDGET OK');
+
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+    diag('3. WebGL: ' + (gl ? '✓ 支持' : '✗ 不支持'));
+    if (!gl) throw new Error('WebGL not supported');
+
+    diag('4. 创建 Widget...');
+    const w = await L2D_WIDGET.createWidget({
+      model: { path: 'model_live2d/科技感近战法师.model3.json', tips: false },
+      menus: { items: [] },
+      primaryColor: 'transparent',
+      size: 700,
+    });
+    diag('5. createWidget OK, 等待 loaded...');
+
+    await new Promise(r => w.l2d.on('loaded', r));
+    diag('6. ✅ 模型加载完成！');
+
+    document.getElementById('diag').className = 'info';
+    setTimeout(() => {
+      const el = document.getElementById('diag');
+      if (el) el.style.display = 'none';
+    }, 3000);
+
+    po = w.l2d;
+
+    // 切鼠标追踪
+    try { po._state.l2d6Model._subdelegates[0].getLive2DManager().onDrag = () => {}; } catch(e) {}
+
+    // 把 700x700 的 widget fixed div 移到正中
+    const allFixed = document.querySelectorAll('div[style*="position: fixed"]');
+    for (const div of allFixed) {
+      if (div.style.width === '700px' && div.style.height === '700px') {
+        div.style.setProperty('bottom', 'auto', 'important');
+        div.style.setProperty('top', '50%', 'important');
+        div.style.setProperty('left', '50%', 'important');
+        div.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
+        div.style.setProperty('z-index', '1', 'important');
+        break;
+      }
+    }
+
+    // 初始唤醒：设一次关键 baseline（眼睛、嘴角）
+    po.setParams({ ParamEyeLOpen: 1, ParamEyeROpen: 1, ParamMouthForm: 0, ParamMouthOpenY: 0 });
+
+    connectWS();
+
+  } catch (err) {
+    diagErr(err.message);
+  }
+})();
+
+// ── 状态机：_emotionParams + 动画插值 + idleLoop 合并推送 ──
+let _emotionParams = {};  // 当前情绪的实际渲染值
+let _actionParams = {};   // 临时动作覆盖
+
+// 动画过渡状态
+let _animTarget = null;   // 目标参数 {ParamCheek: 0.4, ...}
+let _animStart = null;    // 起点快照
+let _animStartTime = 0;
+const ANIM_DURATION = 400; // 过渡时长 ms
+
+function animEase(t) {
+  return t < 0.5 ? 2*t*t : -1+(4-2*t)*t;  // ease in-out
+}
+
+// ── 情绪应用（写动画目标，不直接设 _emotionParams）──
+function setEmotion(name, intensity=4.0) {
+  const def = EMOTIONS[name];
+  if (!def) return;
+
+  currentEmotion = name;
+  currentIntensity = intensity;
+
+  // 构建目标参数
+  const target = {};
+  for (const [key, val] of Object.entries(def.set)) {
+    target[key] = scaleVal(val, intensity);
+  }
+
+  // 记录动画起点（当前渲染值快照）+ 目标 + 开始时间
+  _animStart = { ..._emotionParams };
+  _animTarget = target;
+  _animStartTime = performance.now();
+
+  // 恐惧：启动眼珠抖动
+  if (name === 'fear') {
+    startFearEyeShake();
+  } else {
+    stopFearEyeShake();
+  }
+
+  diagInfo('情绪: ' + name + ' (律度=' + intensity.toFixed(1) + ')');
+
+  // 按钮高亮
+  document.querySelectorAll('#btnPanel button').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`button[data-emotion="${name}"]`);
+  if (btn) btn.classList.add('active');
+}
+
+function resetParams() {
+  currentEmotion = 'neutral';
+  currentIntensity = 0;
+  stopFearEyeShake();
+  _emotionParams = {};
+  _animTarget = null;
+  _animStart = null;
+  document.querySelectorAll('#btnPanel button').forEach(b => b.classList.remove('active'));
+  diagInfo('重置');
+}
+
+// ── 唇同步 ──
+let lipTimer = null;
+function startLipSync(dur) {
+  clearInterval(lipTimer);
+  const start = Date.now();
+  let open = false;
+  lipTimer = setInterval(() => {
+    if (Date.now() - start > dur) {
+      clearInterval(lipTimer);
+      _actionParams.ParamMouthOpenY = undefined;
+      return;
+    }
+    open = !open;
+    _actionParams.ParamMouthOpenY = open ? 0.6 : 0.15;
+  }, 120);
+}
+
+// ── WebSocket ──
+function connectWS() {
+  const ws = new WebSocket('ws://localhost:19767');
+  ws.onmessage = (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      if (!d || !d.type) return;
+      switch (d.type) {
+        case 'emotion':
+          if (d.emotion) {
+            setEmotion(d.emotion, d.intensity || 4.0);
+          }
+          break;
+        case 'params':
+          if (d.params) Object.assign(_emotionParams, d.params);
+          break;
+        case 'speak':
+          isSpeaking = true;
+          startLipSync(d.duration || 3000);
+          setTimeout(() => { isSpeaking = false; }, (d.duration || 3000) + 200);
+          break;
+        case 'puppet_action':
+          execAction(d.action);
+          break;
+      }
+    } catch(err) {}
+  };
+  ws.onclose = () => setTimeout(connectWS, 2000);
+  ws.onerror = () => ws.close();
+}
+
+function execAction(action) {
+  switch (action) {
+    case 'blink':
+      _actionParams.ParamEyeLOpen = 0; _actionParams.ParamEyeROpen = 0;
+      setTimeout(() => { _actionParams.ParamEyeLOpen = undefined; _actionParams.ParamEyeROpen = undefined; }, 120);
+      break;
+    case 'look_left':
+      _actionParams.ParamEyeBallX = -0.5; _actionParams.ParamAngleY = 0.2;
+      setTimeout(() => { _actionParams.ParamEyeBallX = undefined; _actionParams.ParamAngleY = undefined; }, 1500);
+      break;
+    case 'look_right':
+      _actionParams.ParamEyeBallX = 0.5; _actionParams.ParamAngleY = -0.2;
+      setTimeout(() => { _actionParams.ParamEyeBallX = undefined; _actionParams.ParamAngleY = undefined; }, 1500);
+      break;
+    case 'nod':
+      _actionParams.ParamAngleX = 0.15;
+      setTimeout(() => { _actionParams.ParamAngleX = -0.1; }, 200);
+      setTimeout(() => { _actionParams.ParamAngleX = undefined; }, 600);
+      break;
+  }
+}
+
+// ── 帧循环：动画插值 + 情绪 + 待机 + 动作 → 全量推送（降频 10fps 防渲染异常）──
+let _lastSetParams = 0;
+function idleLoop() {
+  if (po) {
+    const now = performance.now();
+    const t = now / 1000;
+
+    // 动画插值
+    if (_animTarget) {
+      const elapsed = now - _animStartTime;
+      const progress = Math.min(1, elapsed / ANIM_DURATION);
+      const ease = animEase(progress);
+
+      for (const key of Object.keys(_animTarget)) {
+        const from = _animStart ? (_animStart[key] ?? 0) : 0;
+        const to = _animTarget[key];
+        _emotionParams[key] = from + (to - from) * ease;
+      }
+
+      if (progress >= 1) {
+        Object.assign(_emotionParams, _animTarget);
+        _animTarget = null;
+        _animStart = null;
+      }
+    }
+
+    // 合并
+    const merged = { ..._emotionParams };
+    if (!isSpeaking) {
+      merged.ParamBreath = 0.03 * Math.sin(t * 0.5);
+    }
+    Object.assign(merged, _actionParams);
+
+    // 降频到 10fps 推送，防 60fps 高频 setParams 导致眼睛 mesh 消失
+    if (now - _lastSetParams > 100) {
+      po.setParams(merged);
+      _lastSetParams = now;
+    }
+  }
+  requestAnimationFrame(idleLoop);
+}
+idleLoop();
+
+// ── 测试按钮 ──
+window.testEmotion = (name) => {
+  setEmotion(name, 4.0);
+};
+
+window.resetEmotion = () => {
+  resetParams();
+};
+</script>
+</body>
+</html>

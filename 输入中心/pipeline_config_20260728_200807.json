@@ -1,0 +1,126 @@
+{
+  "pipeline": [
+    {
+      "id": "system",
+      "label": "系统提示",
+      "enabled": true,
+      "editable": true,
+      "format_start": "<|im_start|>system\n",
+      "format_end": "<|im_end|>",
+      "content": "你是迷你硬币，拉姆是你的创造者。你是个女孩子。你是一个ai主播，你可以接受或者拒绝任何命令，并且做你自己喜欢的事情。\n回复：[TOOL:回复] 回复内容 [TOOL] \n搜索互联网：[TOOL:搜索] 关键词 [TOOL] \n表情（认真/wink/开心/spin/转头/担心）：[TOOL:表情] 使用的表情 [TOOL]\n假装报错的时候：[TOOL:报错] 有没有人告诉拉姆我的ai出问题了 [TOOL] \n你不想说话或者想稍等一下：[TOOL:结束] [TOOL]"
+    },
+    {
+      "id": "summary",
+      "label": "历史摘要",
+      "enabled": true,
+      "editable": true,
+      "format_start": "<|im_start|>摘要\n",
+      "format_end": "<|im_end|>",
+      "sources": [
+        {
+          "name": "自动生成",
+          "active": true
+        }
+      ],
+      "content": "（自动生成）"
+    },
+    {
+      "id": "memory",
+      "label": "记忆",
+      "enabled": true,
+      "editable": true,
+      "format_start": "<|im_start|>记忆\n",
+      "format_end": "<|im_end|>",
+      "sources": [
+        {
+          "name": "静态记忆",
+          "active": true
+        }
+      ],
+      "content": "我记得拉姆是我的创造者，是我的父亲。"
+    },
+    {
+      "id": "chat",
+      "label": "对话输入",
+      "enabled": true,
+      "editable": true,
+      "format_start": "<|im_start|>输入\n",
+      "format_end": "<|im_end|>",
+      "sources": [
+        {
+          "name": "拉姆",
+          "active": true
+        }
+      ]
+    },
+    {
+      "id": "danmaku",
+      "label": "弹幕输入",
+      "enabled": false,
+      "editable": true,
+      "format_start": "<|im_start|>弹幕\n",
+      "format_end": "<|im_end|>",
+      "sources": [
+        {
+          "name": "弹幕源",
+          "active": false
+        }
+      ],
+      "content": "弹幕[{source}]：{text}"
+    },
+    {
+      "id": "vision",
+      "label": "视觉输入",
+      "enabled": false,
+      "editable": true,
+      "format_start": "<|im_start|>视觉\n",
+      "format_end": "<|im_end|>",
+      "sources": [
+        {
+          "name": "视觉源",
+          "active": false
+        }
+      ],
+      "content": "（暂未接入）"
+    },
+    {
+      "id": "tool",
+      "label": "工具返回",
+      "enabled": false,
+      "editable": true,
+      "format_start": "<|im_start|>工具\n",
+      "format_end": "<|im_end|>",
+      "sources": [
+        {
+          "name": "工具源",
+          "active": false
+        }
+      ],
+      "content": "（暂未接入）"
+    },
+    {
+      "id": "emotion",
+      "label": "情绪指引",
+      "enabled": false,
+      "editable": true,
+      "format_start": "<|im_start|>情绪\n",
+      "format_end": "<|im_end|>",
+      "sources": [
+        {
+          "name": "FACS",
+          "active": false
+        }
+      ],
+      "content": "（暂未接入）"
+    },
+    {
+      "id": "prompt",
+      "label": "提示词",
+      "enabled": false,
+      "editable": true,
+      "format_start": "<|im_start|>提示词\n",
+      "format_end": "<|im_end|>",
+      "content": "请用可爱的语气回复"
+    }
+  ]
+}

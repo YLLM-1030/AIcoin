@@ -1,0 +1,267 @@
+{
+    "Version": 1,
+    "Name": "科技感近战法师",
+    "ModelID": "1afac180e102469e9379f2d81b14b530",
+    "FileReferences": {
+        "Model": "科技感近战法师.model3.json",
+        "IdleAnimation": "",
+        "IdleAnimationWhenTrackingLost": ""
+    },
+    "ModelSaveMetadata": {
+        "LastSavedVTubeStudioVersion": "1.35.8",
+        "LastSavedPlatform": "Steam",
+        "LastSavedDateUTC": "Friday, 22 May 2026, 07:30:00",
+        "LastSavedDateLocalTime": "Friday, 22 May 2026, 15:30:00",
+        "LastSavedDateUnixMillisecondTimestamp": "1779435000000",
+        "TotalSaveCount": 1
+    },
+    "SavedModelPosition": {
+        "Position": {"x": 0.0, "y": 0.0, "z": 0.0},
+        "Rotation": {"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0},
+        "Scale": {"x": 1.0, "y": 1.0, "z": 1.0}
+    },
+    "ModelPositionMovement": {
+        "Use": true, "X": 6, "Y": 5, "Z": 6,
+        "SmoothingX": 10, "SmoothingY": 10, "SmoothingZ": 10
+    },
+    "ItemSettings": {
+        "OnlyMoveWhenPinned": false,
+        "AllowNormalHotkeyTriggers": true,
+        "Multiplier_HeadAngleX": 1.0,
+        "Multiplier_HeadAngleY": 1.0,
+        "Multiplier_HeadAngleZ": 1.0,
+        "Shift_HeadAngleX": 0.0,
+        "Shift_HeadAngleY": 0.0,
+        "Smoothing_HeadAngleX": 15.0,
+        "Smoothing_HeadAngleY": 15.0,
+        "Smoothing_HeadAngleZ": 15.0
+    },
+    "PhysicsSettings": {
+        "Use": true,
+        "UseLegacyPhysics": true,
+        "Live2DPhysicsFPS": 3,
+        "PhysicsStrength": 50,
+        "WindStrength": 0,
+        "DraggingPhysicsStrength": 10
+    },
+    "GeneralSettings": {
+        "ModelVolume": 90,
+        "TimeUntilTrackingLostIdleAnimation": 0.0,
+        "WorkshopSharingForbidden": true,
+        "EnableExpressionSaving": true
+    },
+    "ParameterSettings": [
+        {
+            "Folder": "Face",
+            "Name": "Face Left/Right Rotation",
+            "Input": "FaceAngleX",
+            "InputRangeLower": -30.0, "InputRangeUpper": 30.0,
+            "OutputRangeLower": -30.0, "OutputRangeUpper": 30.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamAngleX",
+            "Smoothing": 15, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Face Up/Down Rotation",
+            "Input": "FaceAngleY",
+            "InputRangeLower": -30.0, "InputRangeUpper": 30.0,
+            "OutputRangeLower": -30.0, "OutputRangeUpper": 30.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamAngleY",
+            "Smoothing": 15, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Face Lean Rotation",
+            "Input": "FaceAngleZ",
+            "InputRangeLower": -30.0, "InputRangeUpper": 30.0,
+            "OutputRangeLower": -30.0, "OutputRangeUpper": 30.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamAngleZ",
+            "Smoothing": 30, "Minimized": false
+        },
+        {
+            "Folder": "Body",
+            "Name": "Body Rotation X (Independent)",
+            "Input": "BodyAngleX",
+            "InputRangeLower": -30.0, "InputRangeUpper": 30.0,
+            "OutputRangeLower": -30.0, "OutputRangeUpper": 30.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamBodyAngleX",
+            "Smoothing": 10, "Minimized": false
+        },
+        {
+            "Folder": "Body",
+            "Name": "Body Rotation Y (Independent)",
+            "Input": "BodyAngleY",
+            "InputRangeLower": -30.0, "InputRangeUpper": 30.0,
+            "OutputRangeLower": -30.0, "OutputRangeUpper": 30.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamBodyAngleY",
+            "Smoothing": 10, "Minimized": false
+        },
+        {
+            "Folder": "Body",
+            "Name": "Body Rotation Z (Independent)",
+            "Input": "BodyAngleZ",
+            "InputRangeLower": -30.0, "InputRangeUpper": 30.0,
+            "OutputRangeLower": -30.0, "OutputRangeUpper": 30.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamBodyAngleZ",
+            "Smoothing": 10, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Eye Open Left",
+            "Input": "EyeOpenLeft",
+            "InputRangeLower": 0.0, "InputRangeUpper": 1.0,
+            "OutputRangeLower": 0.0, "OutputRangeUpper": 1.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": true, "UseBreathing": false,
+            "OutputLive2D": "ParamEyeLOpen",
+            "Smoothing": 10, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Eye Open Right",
+            "Input": "EyeOpenRight",
+            "InputRangeLower": 0.0, "InputRangeUpper": 1.0,
+            "OutputRangeLower": 0.0, "OutputRangeUpper": 1.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": true, "UseBreathing": false,
+            "OutputLive2D": "ParamEyeROpen",
+            "Smoothing": 10, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Eye Ball X",
+            "Input": "EyeRightX",
+            "InputRangeLower": -1.0, "InputRangeUpper": 1.0,
+            "OutputRangeLower": -1.0, "OutputRangeUpper": 1.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamEyeBallX",
+            "Smoothing": 9, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Eye Ball Y",
+            "Input": "EyeRightY",
+            "InputRangeLower": -1.0, "InputRangeUpper": 1.0,
+            "OutputRangeLower": -1.0, "OutputRangeUpper": 1.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamEyeBallY",
+            "Smoothing": 8, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Brow Height Left",
+            "Input": "BrowLeftY",
+            "InputRangeLower": 0.0, "InputRangeUpper": 1.0,
+            "OutputRangeLower": -1.0, "OutputRangeUpper": 1.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamBrowLY",
+            "Smoothing": 10, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Brow Height Right",
+            "Input": "BrowRightY",
+            "InputRangeLower": 0.0, "InputRangeUpper": 1.0,
+            "OutputRangeLower": -1.0, "OutputRangeUpper": 1.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamBrowRY",
+            "Smoothing": 10, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Mouth Smile",
+            "Input": "MouthSmile",
+            "InputRangeLower": 0.0, "InputRangeUpper": 1.0,
+            "OutputRangeLower": -1.0, "OutputRangeUpper": 1.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamMouthForm",
+            "Smoothing": 0, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Mouth Open",
+            "Input": "MouthOpen",
+            "InputRangeLower": 0.0, "InputRangeUpper": 1.0,
+            "OutputRangeLower": 0.0, "OutputRangeUpper": 1.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamMouthOpenY",
+            "Smoothing": 0, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Cheek Puff",
+            "Input": "CheekPuff",
+            "InputRangeLower": 0.0, "InputRangeUpper": 1.0,
+            "OutputRangeLower": 0.0, "OutputRangeUpper": 1.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamCheek",
+            "Smoothing": 45, "Minimized": false
+        },
+        {
+            "Folder": "Face",
+            "Name": "Brow Combined",
+            "Input": "Brows",
+            "InputRangeLower": 0.0, "InputRangeUpper": 1.0,
+            "OutputRangeLower": -0.8, "OutputRangeUpper": 1.0,
+            "ClampInput": false, "ClampOutput": false,
+            "UseBlinking": false, "UseBreathing": false,
+            "OutputLive2D": "ParamBrowLForm",
+            "Smoothing": 15, "Minimized": false
+        }
+    ],
+    "Hotkeys": [],
+    "HotkeySettings": {
+        "UseOnScreenHotkeys": true,
+        "UseKeyboardHotkeys": true,
+        "SendOnScreenHotkeysToPC": true,
+        "OnScreenHotkeyAlpha": 85
+    },
+    "ArtMeshDetails": {
+        "ArtMeshesExcludedFromPinning": [],
+        "ArtMeshesThatDeleteItemsOnDrop": [],
+        "ArtMeshSceneLightingMultipliers": [],
+        "ArtMeshMultiplyAndScreenColors": [],
+        "ModelArtMeshGroups": []
+    },
+    "ParameterCustomization": {
+        "ParametersExcludedFromVNetSmoothing": [],
+        "SoundTriggers": []
+    },
+    "PhysicsCustomizationSettings": {
+        "PhysicsMultipliersPerPhysicsGroup": [],
+        "WindMultipliersPerPhysicsGroup": [],
+        "DraggingPhysicsMultipliersPerPhysicsGroup": []
+    },
+    "FolderInfo": {
+        "HotkeyFolders": [],
+        "ConfigItemFolders": []
+    },
+    "UserCustomization": {
+        "PreferredLanguageSetBy": "",
+        "PreferredLanguage": "",
+        "AvailableLanguages": [],
+        "UserParamFolderInfo": [],
+        "UserParamInfo": []
+    },
+    "SavedActiveExpressions": [],
+    "ModelFolder": "<VTS_MODEL_BASE_PATH_PLACEHOLDER>"
+}

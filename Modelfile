@@ -1,0 +1,2 @@
+FROM tool_v8:latest
+PARAMETER enable_thinking false

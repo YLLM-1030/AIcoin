@@ -1,0 +1,16 @@
+字幕服务 → http://localhost:18777
+字幕页面 → http://localhost:18777/?size=64&pos=bottom&history=1
+Traceback (most recent call last):
+  File "/mnt/c/Users/Autogram-coin/Desktop/新架构硬币/字幕/subtitle_server.py", line 240, in <module>
+    Server(('0.0.0.0', PORT), Handler).serve_forever()
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/autogram-coin/miniconda3/lib/python3.14/socketserver.py", line 457, in __init__
+    self.server_bind()
+    ~~~~~~~~~~~~~~~~^^
+  File "/home/autogram-coin/miniconda3/lib/python3.14/http/server.py", line 148, in server_bind
+    socketserver.TCPServer.server_bind(self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/home/autogram-coin/miniconda3/lib/python3.14/socketserver.py", line 478, in server_bind
+    self.socket.bind(self.server_address)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 98] Address already in use

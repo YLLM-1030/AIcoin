@@ -1,0 +1,50 @@
+{"instruction": "French Revolution", "output": "Summary of the French Revolution: [TOOL:搜索] French Revolution [/TOOL]"}
+{"instruction": "Los Angeles", "output": "Currently in Los Angeles, it is [TOOL:搜索] temperature Los Angeles [/TOOL] and the weather condition is [TOOL:搜索] weather condition Los Angeles [/TOOL]."}
+{"instruction": "Formula for calculating the area of a circle", "output": "The formula for calculating the area of a circle is [TOOL:搜索] area of a circle formula [/TOOL]"}
+{"instruction": "Virtual Reality", "output": "Here are the latest news updates on virtual reality: [TOOL:搜索] Virtual Reality [/TOOL]"}
+{"instruction": "Who is the current president of the United States?", "output": "The current president of the United States is [TOOL:搜索] current president of the United States [/TOOL]"}
+{"instruction": "F. Scott Fitzgerald", "output": "F. Scott Fitzgerald (1896-1940) was an American novelist and short story writer, best known for his work 'The Great Gatsby'. More details can be found here: [TOOL:搜索] F. Scott Fitzgerald [/TOOL]"}
+{"instruction": "Theory of relativity", "output": "The theory of relativity, developed by Albert Einstein, is a framework that explains the relationship between space, time, and gravity. Here's a summary: [TOOL:搜索] theory of relativity [/TOOL]"}
+{"instruction": "81", "output": "The square root of 81 is: [TOOL:搜索] sqrt(81) [/TOOL]"}
+{"instruction": "Battle of Waterloo", "output": "Here's a summary of the Battle of Waterloo: [TOOL:搜索] Battle of Waterloo [/TOOL]"}
+{"instruction": "Artificial Intelligence", "output": "Here are the top headlines about Artificial Intelligence: [TOOL:搜索] Artificial Intelligence [/TOOL]"}
+{"instruction": "New York, San Francisco", "output": "The distance between New York and San Francisco is: [TOOL:搜索] distance between New York and San Francisco [/TOOL]"}
+{"instruction": "Apollo 11 moon landing", "output": "Here's the significance of the Apollo 11 moon landing: [TOOL:搜索] Apollo 11 moon landing significance [/TOOL]"}
+{"instruction": "Hello, world!", "output": "The length of the given string is [TOOL:回复] len(\"Hello, world!\") [/TOOL]."}
+{"instruction": "6", "output": "The list of square values is [TOOL:回复] [i**2 for i in range(1, 7)] [/TOOL]."}
+{"instruction": "12345", "output": "The sum of the digits is [TOOL:回复] sum(list(map(int, str(12345)))) [/TOOL]."}
+{"instruction": "(3 * (4 + 2)) / 2", "output": "The value of the expression is [TOOL:回复] result = (3 * (4 + 2)) / 2; result [/TOOL]."}
+{"instruction": "48, 36", "output": "The greatest common divisor is [TOOL:回复] import math; math.gcd(48, 36) [/TOOL]."}
+{"instruction": "What is the current temperature and weather in New York City?", "output": "The current temperature and weather conditions in New York City are: [TOOL:搜索] current temperature and weather in New York City [/TOOL]."}
+{"instruction": "What are the top headlines in technology news today?", "output": "The top headlines in technology news today are: [TOOL:搜索] top technology headlines [/TOOL]."}
+{"instruction": "What's the weather like in Los Angeles, and what are some fun activities to do there?", "output": "The current weather in Los Angeles is: [TOOL:搜索] current weather in Los Angeles [/TOOL]. You can find fun activities to do there by searching: search('fun activities in Los Angeles')."}
+{"instruction": "Battle of Gettysburg", "output": "Here is a summary of the Battle of Gettysburg: [TOOL:搜索] Battle of Gettysburg [/TOOL]."}
+{"instruction": "Eiffel Tower", "output": "Here is some information about the Eiffel Tower: [TOOL:搜索] Eiffel Tower [/TOOL]."}
+{"instruction": "London, England weather", "output": "The weather in London, England is: [TOOL:搜索] London, England weather [/TOOL]."}
+{"instruction": "Sum and product of 8 and 13", "output": "The sum of 8 and 13 is [TOOL:回复] 8+13 [/TOOL] and the product is [TOOL:回复] 8*13 [/TOOL]."}
+{"instruction": "Top 5 tech news headlines", "output": "The top 5 news headlines in technology today are [TOOL:搜索] top 5 tech news headlines [/TOOL]."}
+{"instruction": "Square root of 49", "output": "The square root of 49 is [TOOL:回复] import math; math.sqrt(49) [/TOOL]."}
+{"instruction": "8 to the power of 3 rounded up", "output": "8 raised to the power of 3 and rounded up is [TOOL:回复] import math; math.ceil(8**3) [/TOOL]."}
+{"instruction": "February", "output": "There are [TOOL:搜索] days in February [/TOOL] days in February of the current year."}
+{"instruction": "7 * 9 - 4 / 2", "output": "The result of the expression 7 * 9 - 4 / 2 is [TOOL:回复] 7 * 9 - 4 / 2 [/TOOL]."}
+{"instruction": "5, 8, 23, 11", "output": "The sum of the numbers in the list is [TOOL:回复] sum([5, 8, 23, 11]) [/TOOL]."}
+{"instruction": "Mount Everest height", "output": "Mount Everest is [TOOL:搜索] height of Mount Everest [/TOOL] tall."}
+{"instruction": "San Francisco weather next three days", "output": "The weather forecast for San Francisco in the next three days is: [TOOL:搜索] San Francisco weather next 3 days [/TOOL]."}
+{"instruction": "square root of 144", "output": "The square root of 144 is [TOOL:搜索] sqrt(144) [/TOOL]."}
+{"instruction": "100 degrees Celsius to Fahrenheit", "output": "100 degrees Celsius is equal to [TOOL:搜索] 100 C to F [/TOOL] Fahrenheit."}
+{"instruction": "Albert Einstein", "output": "Here is a summary about Albert Einstein: [TOOL:搜索] Albert Einstein [/TOOL]."}
+{"instruction": "Las Vegas rain tomorrow", "output": "The weather forecast for Las Vegas tomorrow is: [TOOL:搜索] Las Vegas weather tomorrow [/TOOL]. Check for rain in the forecast."}
+{"instruction": "Taj Mahal", "output": "Here's a summary of the Taj Mahal: [TOOL:搜索] Taj Mahal [/TOOL]."}
+{"instruction": "Steve Jobs", "output": "Here's a brief description of Steve Jobs: [TOOL:搜索] Steve Jobs [/TOOL]."}
+{"instruction": "San Francisco weather forecast next week", "output": "The weather forecast for San Francisco over the next week is: [TOOL:搜索] San Francisco weather forecast next week [/TOOL]."}
+{"instruction": "Weather in London", "output": "The weather updates for London are: [TOOL:搜索] Weather in London [/TOOL]."}
+{"instruction": "AI advancements", "output": "Latest news on AI advancements: [TOOL:搜索] AI advancements [/TOOL]"}
+{"instruction": "81", "output": "The square root of 81 is [TOOL:回复] 81 ** 0.5 [/TOOL]"}
+{"instruction": "Electric vehicles", "output": "Latest news: [TOOL:搜索] Electric vehicles [/TOOL]. Top search results: search('Electric vehicles')"}
+{"instruction": "Toolformer is an advanced AI technology platform.", "output": "The length of the text is [TOOL:回复] len(\"Toolformer is an advanced AI technology platform.\") [/TOOL]"}
+{"instruction": "https://www.example1.com, https://www.example2.com", "output": "Length of the text content from example1.com: [TOOL:回复] len(request(\"https://www.example1.com\")) [/TOOL], example2.com: [TOOL:回复] len(request(\"https://www.example2.com\")) [/TOOL]"}
+{"instruction": "5, 10", "output": "The sum of all integers between 5 and 10 is [TOOL:回复] sum(range(5, 11)) [/TOOL]"}
+{"instruction": "Isaac Newton", "output": "Isaac Newton was an English mathematician, physicist, and astronomer. [TOOL:搜索] Isaac Newton [/TOOL]."}
+{"instruction": "What are today's top news stories?", "output": "Today's top news stories are: [TOOL:搜索] top headlines today [/TOOL]."}
+{"instruction": "Will it rain in Seattle tomorrow?", "output": "The weather in Seattle tomorrow is: [TOOL:搜索] Seattle weather tomorrow [/TOOL]."}
+{"instruction": "Tesla, Inc.", "output": "Tesla, Inc. is a multinational electric vehicle and clean energy company. Find out more: [TOOL:搜索] Tesla, Inc. [/TOOL]."}

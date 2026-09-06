@@ -1,0 +1,3277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Mini Coin Live2D v2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  }
+
+  /* ===== 加载提示 ===== */
+  #loading {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: #aaa; font-size: 18px; z-index: 100;
+    text-align: center;
+  }
+  #loading .spinner {
+    display: inline-block; width: 40px; height: 40px;
+    border: 3px solid #444; border-top-color: #0af;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== Canvas 容器 — 居中 ===== */
+  #canvasWrap {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+  }
+  #canvasWrap canvas { display: block; }
+
+  /* ===== 按钮面板 — 左侧 (默认隐藏, 点"开始测试"才显示) ===== */
+  #btnPanel {
+    position: fixed; top: 140px; left: 12px;
+    z-index: 999;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    display: none; flex-direction: column; gap: 3px;
+  }
+  #btnPanel::-webkit-scrollbar { width: 4px; }
+  #btnPanel::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+  .panel { background: rgba(30,30,40,0.85); border-radius: 8px; border: 1px solid #333; overflow: hidden; }
+  .panel-hdr {
+    padding: 5px 10px; cursor: pointer; font-size: 13px; color: #ddd;
+    display: flex; align-items: center; gap: 6px;
+    user-select: none; transition: background 0.15s;
+  }
+  .panel-hdr:hover { background: rgba(60,60,80,0.5); }
+  .panel-hdr.collapsed::after { content: " ▶"; font-size: 10px; color: #666; }
+  .panel-hdr:not(.collapsed)::after { content: " ▼"; font-size: 10px; color: #666; }
+  .varcnt { font-size: 10px; color: #666; margin-left: auto; }
+  .panel-bdy { padding: 4px 8px 8px; }
+  .panel-bdy.closed { display: none; }
+  .panel-bdy.open { display: block; }
+  .rrow { display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+  .rbtns { display: flex; gap: 2px; flex-shrink: 0; }
+  .rbtn {
+    width: 34px; height: 22px; padding: 0;
+    border: 1px solid #555; border-radius: 4px;
+    background: rgba(50,50,70,0.8); color: #ccc;
+    cursor: pointer; font-size: 11px; text-align: center;
+    transition: all 0.12s;
+  }
+  .rbtn:hover { border-color: #0af; color: #fff; background: rgba(0,160,255,0.15); }
+  .rbtn.active { border-color: #0af; background: rgba(0,160,255,0.2); color: #0af; }
+  .sbtn {
+    width: 22px; height: 22px; padding: 0;
+    border: 1px solid #444; border-radius: 3px;
+    background: rgba(40,40,50,0.6); cursor: pointer;
+    font-size: 10px; text-align: center; line-height: 20px;
+    transition: all 0.12s;
+  }
+  .sbtn:hover { border-color: #888; background: rgba(60,60,80,0.5); }
+  .sbtn:nth-child(2) { border-color: #a80; } /* 🟡 upper */
+  .sbtn:nth-child(3) { border-color: #2a8; } /* 🟢 lower */
+  .sbtn:nth-child(4) { border-color: #48c; } /* 🔵 body */
+  .lbl { font-size: 10px; color: #777; white-space: nowrap; }
+
+
+  /* ===== 状态栏 — 底部 ===== */
+  #statusBar {
+    position: fixed; bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    color: #666; font-size: 12px;
+    background: rgba(0,0,0,0.5);
+    padding: 4px 14px; border-radius: 10px;
+    z-index: 10;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- 加载 -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div id="loadMsg">加载模型中...</div>
+</div>
+
+<!-- Canvas -->
+<div id="canvasWrap">
+  <canvas id="l2dCanvas" width="800" height="800" style="width:700px;height:700px;"></canvas>
+</div>
+
+<!-- 开始测试按钮 (右上角, 倾听徽章下方; toggle: 点一次展开测试面板, 再点收起) -->
+<div id="testGate" style="position:fixed;top:60px;right:12px;z-index:1000;">
+  <button id="btnTestGate" onclick="toggleTestPanels()" style="
+    padding:6px 14px;border:1px solid #0af;border-radius:10px;
+    background:rgba(0,160,255,0.15);color:#0af;cursor:pointer;font-size:13px;
+    transition:all 0.15s;">🎮 开始测试</button>
+</div>
+
+<!-- 动作开关 (开始测试下方, 两个独立开关: 18组随机动作 / fidget微动作) -->
+<div id="motionGates" style="position:fixed;top:106px;right:12px;z-index:1000;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+  <button id="btnIdleSeq" onclick="toggleIdleSeq()" style="
+    padding:5px 12px;border:1px solid #5abe6e;border-radius:10px;
+    background:rgba(90,190,110,0.15);color:#5abe6e;cursor:pointer;font-size:12px;
+    transition:all 0.15s;">🎭 待机动作 开</button>
+  <button id="btnFidget" onclick="toggleFidget()" style="
+    padding:5px 12px;border:1px solid #5abe6e;border-radius:10px;
+    background:rgba(90,190,110,0.15);color:#5abe6e;cursor:pointer;font-size:12px;
+    transition:all 0.15s;">✨ 微动作 开</button>
+</div>
+
+<!-- 按钮 (伸缩面板) -->
+<div id="btnPanel">
+  <div class="panel" data-cat="neutral">
+    <div class="panel-hdr" onclick="togglePanel(this)">😶 默认</div>
+    <div class="panel-bdy open">
+      <span class="rbtns"><button data-emotion="neutral" class="rbtn" onclick="setEmotion('neutral',1)">😶 全体</button></span>
+    </div>
+  </div>
+  <div class="panel" data-cat="happy">
+    <div class="panel-hdr" onclick="togglePanel(this)">😊 开心 <span class="varcnt">5变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="happy" class="rbtn" onclick="setEmotion('happy_v1',1)">😊标</button><button class="sbtn" onclick="setEmotion('happy_v1',1,new Set(['upper']))">🟡上</button><button class="sbtn" onclick="setEmotion('happy_v1',1,new Set(['lower']))">🟢下</button><button class="sbtn" onclick="setEmotion('happy_v1',1,new Set(['body']))">🔵体</button></span><span class="lbl">标准笑</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="happy_v2" class="rbtn" onclick="setEmotion('happy_v2',1)">😆扭</button><button class="sbtn" onclick="setEmotion('happy_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('happy_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('happy_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">扭头笑</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="happy_v3" class="rbtn" onclick="setEmotion('happy_v3',1)">🤣大</button><button class="sbtn" onclick="setEmotion('happy_v3',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('happy_v3',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('happy_v3',1,new Set(['body']))">🔵</button></span><span class="lbl">大笑</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="happy_v4" class="rbtn" onclick="setEmotion('happy_v4',1)">🤭憋</button><button class="sbtn" onclick="setEmotion('happy_v4',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('happy_v4',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('happy_v4',1,new Set(['body']))">🔵</button></span><span class="lbl">憋笑</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="happy_v5" class="rbtn" onclick="setEmotion('happy_v5',1)">😏调</button><button class="sbtn" onclick="setEmotion('happy_v5',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('happy_v5',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('happy_v5',1,new Set(['body']))">🔵</button></span><span class="lbl">调皮</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="sad">
+    <div class="panel-hdr" onclick="togglePanel(this)">😢 悲伤 <span class="varcnt">2变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="sad_v1" class="rbtn" onclick="setEmotion('sad_v1',1)">😢悲</button><button class="sbtn" onclick="setEmotion('sad_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('sad_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('sad_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">悲伤</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="sad_v2" class="rbtn" onclick="setEmotion('sad_v2',1)">😭哭</button><button class="sbtn" onclick="setEmotion('sad_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('sad_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('sad_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">低头哭</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="angry">
+    <div class="panel-hdr" onclick="togglePanel(this)">😠 生气 <span class="varcnt">4变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="angry_v1" class="rbtn" onclick="setEmotion('angry_v1',1)">😠生</button><button class="sbtn" onclick="setEmotion('angry_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('angry_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('angry_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">生气</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="angry_v2" class="rbtn" onclick="setEmotion('angry_v2',1)">🥶冷</button><button class="sbtn" onclick="setEmotion('angry_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('angry_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('angry_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">冷怒</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="angry_v3" class="rbtn" onclick="setEmotion('angry_v3',1)">😤隐</button><button class="sbtn" onclick="setEmotion('angry_v3',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('angry_v3',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('angry_v3',1,new Set(['body']))">🔵</button></span><span class="lbl">隐忍</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="angry_v4" class="rbtn" onclick="setEmotion('angry_v4',1)">😏嘲</button><button class="sbtn" onclick="setEmotion('angry_v4',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('angry_v4',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('angry_v4',1,new Set(['body']))">🔵</button></span><span class="lbl">嘲讽</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="surprise">
+    <div class="panel-hdr" onclick="togglePanel(this)">😲 惊讶 <span class="varcnt">3变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="surprise" class="rbtn" onclick="setEmotion('surprise_v1',1)">😲惊</button><button class="sbtn" onclick="setEmotion('surprise_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('surprise_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('surprise_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">惊讶</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="surprise_v2" class="rbtn" onclick="setEmotion('surprise_v2',1)">🎉惊</button><button class="sbtn" onclick="setEmotion('surprise_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('surprise_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('surprise_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">惊喜</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="surprise_v4" class="rbtn" onclick="setEmotion('surprise_v4',1)">🤨怀</button><button class="sbtn" onclick="setEmotion('surprise_v4',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('surprise_v4',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('surprise_v4',1,new Set(['body']))">🔵</button></span><span class="lbl">怀疑</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="fear">
+    <div class="panel-hdr" onclick="togglePanel(this)">😨 害怕 <span class="varcnt">2变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="fear_v1" class="rbtn" onclick="setEmotion('fear_v1',1)">😨害</button><button class="sbtn" onclick="setEmotion('fear_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('fear_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('fear_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">害怕</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="fear_v3" class="rbtn" onclick="setEmotion('fear_v3',1)">😱惊</button><button class="sbtn" onclick="setEmotion('fear_v3',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('fear_v3',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('fear_v3',1,new Set(['body']))">🔵</button></span><span class="lbl">惊恐</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="worried">
+    <div class="panel-hdr" onclick="togglePanel(this)">😰 担心 <span class="varcnt">4变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="worried" class="rbtn" onclick="setEmotion('worried_v1',1)">😰担</button><button class="sbtn" onclick="setEmotion('worried_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('worried_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('worried_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">担心</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="worried_v2" class="rbtn" onclick="setEmotion('worried_v2',1)">🤔轻</button><button class="sbtn" onclick="setEmotion('worried_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('worried_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('worried_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">轻度</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="worried_v3" class="rbtn" onclick="setEmotion('worried_v3',1)">😟焦</button><button class="sbtn" onclick="setEmotion('worried_v3',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('worried_v3',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('worried_v3',1,new Set(['body']))">🔵</button></span><span class="lbl">焦虑</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="worried_v4" class="rbtn" onclick="setEmotion('worried_v4',1)">😬咬</button><button class="sbtn" onclick="setEmotion('worried_v4',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('worried_v4',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('worried_v4',1,new Set(['body']))">🔵</button></span><span class="lbl">咬唇</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="contempt">
+    <div class="panel-hdr" onclick="togglePanel(this)">🙄 轻蔑 <span class="varcnt">4变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="contempt" class="rbtn" onclick="setEmotion('contempt_v1',1)">🙄轻</button><button class="sbtn" onclick="setEmotion('contempt_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('contempt_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('contempt_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">轻蔑</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="contempt_v2" class="rbtn" onclick="setEmotion('contempt_v2',1)">🥶冷</button><button class="sbtn" onclick="setEmotion('contempt_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('contempt_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('contempt_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">冷蔑</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="contempt_v3" class="rbtn" onclick="setEmotion('contempt_v3',1)">👑俯</button><button class="sbtn" onclick="setEmotion('contempt_v3',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('contempt_v3',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('contempt_v3',1,new Set(['body']))">🔵</button></span><span class="lbl">俯视</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="contempt_v4" class="rbtn" onclick="setEmotion('contempt_v4',1)">😇假</button><button class="sbtn" onclick="setEmotion('contempt_v4',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('contempt_v4',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('contempt_v4',1,new Set(['body']))">🔵</button></span><span class="lbl">假笑</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="shy">
+    <div class="panel-hdr" onclick="togglePanel(this)">😳 害羞 <span class="varcnt">2变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="shy" class="rbtn" onclick="setEmotion('shy_v1',1)">😳害</button><button class="sbtn" onclick="setEmotion('shy_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('shy_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('shy_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">害羞</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="shy_v2" class="rbtn" onclick="setEmotion('shy_v2',1)">🥰被</button><button class="sbtn" onclick="setEmotion('shy_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('shy_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('shy_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">被夸</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="think">
+    <div class="panel-hdr" onclick="togglePanel(this)">🤔 好奇 <span class="varcnt">3变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="think" class="rbtn" onclick="setEmotion('think_v1',1)">🤔好</button><button class="sbtn" onclick="setEmotion('think_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('think_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('think_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">好奇</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="think_v2" class="rbtn" onclick="setEmotion('think_v2',1)">👂侧</button><button class="sbtn" onclick="setEmotion('think_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('think_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('think_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">侧头听</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="think_v3" class="rbtn" onclick="setEmotion('think_v3',1)">🔍探</button><button class="sbtn" onclick="setEmotion('think_v3',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('think_v3',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('think_v3',1,new Set(['body']))">🔵</button></span><span class="lbl">探究</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="tense">
+    <div class="panel-hdr" onclick="togglePanel(this)">😬 紧张 <span class="varcnt">3变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="tense" class="rbtn" onclick="setEmotion('tense_v1',1)">😬紧</button><button class="sbtn" onclick="setEmotion('tense_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('tense_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('tense_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">紧张</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="tense_v2" class="rbtn" onclick="setEmotion('tense_v2',1)">👀警</button><button class="sbtn" onclick="setEmotion('tense_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('tense_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('tense_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">警戒</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="tense_v4" class="rbtn" onclick="setEmotion('tense_v4',1)">💥惊</button><button class="sbtn" onclick="setEmotion('tense_v4',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('tense_v4',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('tense_v4',1,new Set(['body']))">🔵</button></span><span class="lbl">惊跳</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="care">
+    <div class="panel-hdr" onclick="togglePanel(this)">💗 关心 <span class="varcnt">3变体</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="care" class="rbtn" onclick="setEmotion('care_v1',1)">💗关</button><button class="sbtn" onclick="setEmotion('care_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('care_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('care_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">关心</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="care_v2" class="rbtn" onclick="setEmotion('care_v2',1)">👂倾</button><button class="sbtn" onclick="setEmotion('care_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('care_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('care_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">倾听</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="care_v3" class="rbtn" onclick="setEmotion('care_v3',1)">💔心</button><button class="sbtn" onclick="setEmotion('care_v3',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('care_v3',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('care_v3',1,new Set(['body']))">🔵</button></span><span class="lbl">心疼</span></div>
+    </div>
+  </div>
+  <!-- 特殊类 (不参与循环) -->
+  <div class="panel" data-cat="special">
+    <div class="panel-hdr" onclick="togglePanel(this)">⭐ 特殊 <span class="varcnt">7个</span></div>
+    <div class="panel-bdy closed">
+      <div class="rrow"><span class="rbtns"><button data-emotion="hurt_v1" class="rbtn" onclick="setEmotion('hurt_v1',1)">💔受</button><button class="sbtn" onclick="setEmotion('hurt_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('hurt_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('hurt_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">受伤</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="approach_v1" class="rbtn" onclick="setEmotion('approach_v1',1)">🤗关</button><button class="sbtn" onclick="setEmotion('approach_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('approach_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('approach_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">关切</span></div>
+      <div class="rrow"><span class="rbtns"><button data-emotion="confused_v1" class="rbtn" onclick="setEmotion('confused_v1',1)">😵困</button><button class="sbtn" onclick="setEmotion('confused_v1',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('confused_v1',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('confused_v1',1,new Set(['body']))">🔵</button></span><span class="lbl">困惑</span></div>
+      <div class="rrow"><span class="rbtns"><button class="rbtn" onclick="setEmotion('sad_v2',1)">😭哭</button><button class="sbtn" onclick="setEmotion('sad_v2',1,new Set(['upper']))">🟡</button><button class="sbtn" onclick="setEmotion('sad_v2',1,new Set(['lower']))">🟢</button><button class="sbtn" onclick="setEmotion('sad_v2',1,new Set(['body']))">🔵</button></span><span class="lbl">大哭(声)</span></div>
+    </div>
+  </div>
+  <div class="panel" data-cat="reset">
+    <div class="panel-hdr" onclick="resetAll()" style="cursor:pointer;background:#3a2a2a">↺ 重置所有</div>
+  </div>
+  <div class="panel" data-cat="speakmode">
+    <div class="panel-hdr" onclick="toggleSpeakMode()" style="cursor:pointer;background:#1a3a2a">🗣 说话模式: <span id="speakModeTag" style="color:#888">关</span></div>
+    <div style="padding:6px 10px;display:flex;gap:6px;">
+      <button onclick="nextSentence()" style="flex:1;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="模拟下一句: 转头+歪头换向, 幅度随机">⏭ 下一句</button>
+    </div>
+    <div style="padding:6px 10px;display:flex;align-items:center;gap:6px;border-top:1px solid #2a2a2a">
+      <span style="font-size:12px;color:#888;white-space:nowrap">完成信号桥</span>
+      <input id="donePort" type="number" min="18000" max="18999" value="18004" style="width:70px;font-size:12px;background:rgba(30,30,30,0.85);color:#aaa;border:1px solid #444;border-radius:4px;padding:2px 6px">
+      <button onclick="saveDonePort()" style="padding:2px 8px;border:1px solid #444;border-radius:4px;background:#185fa5;color:#fff;cursor:pointer;font-size:12px">保存</button>
+    </div>
+  </div>
+  <div class="panel" data-cat="emote">
+    <div class="panel-hdr">🎭 表情动作</div>
+    <div style="padding:6px 10px;display:flex;flex-wrap:wrap;gap:4px;">
+      <button onclick="playEmote('认真')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;">认真</button>
+      <button onclick="playEmote('wink_AL')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="A 同向·左歪: 头身一起往左">wink 同左</button>
+      <button onclick="playEmote('wink_AR')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="A 同向·右歪: 头身一起往右">wink 同右</button>
+      <button onclick="playEmote('wink_BL')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="B 反向·左歪: 头左歪身体右倾">wink 反左</button>
+      <button onclick="playEmote('wink_BR')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="B 反向·右歪: 头右歪身体左倾">wink 反右</button>
+      <button onclick="playEmote('开心左')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="开心·左歪: 歪头+9.1° 保持2s内随机左右镜像">开心左</button>
+      <button onclick="playEmote('开心右')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="开心·右歪: 歪头-9.1° 保持2s内随机左右镜像">开心右</button>
+      <button onclick="playEmote('spin右')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="整个模型顺时针转一圈 (无肢体动作)">spin 右</button>
+      <button onclick="playEmote('spin左')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="整个模型逆时针转一圈 (无肢体动作)">spin 左</button>
+      <button onclick="playEmote('转头左')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="轻蔑v1 满力度 左扭头">转头左</button>
+      <button onclick="playEmote('转头右')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="轻蔑v1 满力度 右扭头">转头右</button>
+      <button onclick="playEmote('担心左')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="担心v1 delta×0.7 左偏头">担心左</button>
+      <button onclick="playEmote('担心右')" style="flex:1;min-width:58px;padding:5px 8px;border:1px solid #444;border-radius:4px;background:rgba(30,30,30,0.85);color:#aaa;cursor:pointer;font-size:12px;" title="担心v1 delta×0.7 右偏头">担心右</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 骨骼测试面板 (右侧, 默认隐藏, 点"开始测试"才显示) -->
+<div id="testPanel" style="position:fixed;top:50%;right:16px;transform:translateY(-50%);display:none;flex-direction:column;gap:4px;z-index:999;">
+  <div style="color:#888;font-size:11px;margin-bottom:4px;text-align:center;">骨骼测试 (临时+/-15)</div>
+  <button onclick="testParam('ParamAngleX',15)"   title="实际: 左转 15°">🔽 AngleX + (左转)</button>
+  <button onclick="testParam('ParamAngleX',-15)"  title="实际: 右转 15°">🔼 AngleX - (右转)</button>
+  <button onclick="testParam('ParamAngleY',15)"   title="实际: 抬头 15°">👈 AngleY + (抬头)</button>
+  <button onclick="testParam('ParamAngleY',-15)"  title="实际: 低头 15°">👉 AngleY - (低头)</button>
+  <button onclick="testParam('ParamAngleZ',15)"   title="实际: 左歪 15°">🤪 AngleZ + (左歪)</button>
+  <button onclick="testParam('ParamAngleZ',-15)"  title="实际: 右歪 15°">🤪 AngleZ - (右歪)</button>
+  <button onclick="testParam('ParamBodyAngleX',15)"  title="实际: 身左转 15°">⬇ BodyX + (左转)</button>
+  <button onclick="testParam('ParamBodyAngleX',-15)" title="实际: 身右转 15°">⬆ BodyX - (右转)</button>
+  <button onclick="testParam('ParamBodyAngleY',15)"  title="实际: 身前倾 15°">↩ BodyY + (前倾)</button>
+  <button onclick="testParam('ParamBodyAngleY',-15)" title="实际: 身后仰 15°">↪ BodyY - (后仰)</button>
+  <button onclick="testParam('ParamBodyAngleZ',15)"  title="实际: 身右倾 15°">↙ BodyZ + (右倾)</button>
+  <button onclick="testParam('ParamBodyAngleZ',-15)" title="实际: 身左倾 15°">↘ BodyZ - (左倾)</button>
+</div>
+
+<style>
+  #testPanel button {
+    width: 155px; padding: 5px 8px;
+    border: 1px solid #444; border-radius: 4px;
+    background: rgba(30,30,30,0.85); color: #aaa;
+    cursor: pointer; font-size: 11px; text-align: left;
+    transition: all 0.15s;
+  }
+  #testPanel button:hover { background: rgba(60,60,60,0.9); color: #fff; border-color: #0af; }
+  #testPanel button:active { background: rgba(0,160,255,0.2); }
+</style>
+
+<!-- VAD 状态徽章 (左上角, 默认收起; 点它展开完整状态) -->
+<div id="vadGate"
+  style="position:fixed;top:12px;left:12px;color:#aaa;font-size:13px;
+    background:rgba(0,0,0,0.7);padding:5px 12px;border-radius:10px;
+    z-index:10;white-space:nowrap;cursor:pointer;border:1px solid #555"
+  onclick="toggleVadStatus()">🎧 VAD</div>
+
+<!-- 状态 (默认隐藏, 点左上角徽章展开) -->
+<div id="vadStatus" style="display:none;position:fixed;top:48px;left:12px;
+  color:#fff;font-size:28px;background:rgba(0,0,0,0.7);padding:6px 14px;
+  border-radius:10px;z-index:10;white-space:nowrap;line-height:1.4">
+  <div id="vadModeLine" style="font-size:14px;color:#888;margin-bottom:2px">🎧 倾听</div>
+  <div>VAD <b id="vEmo">-</b> <span id="vRatio">-</span> | L2D <b id="l2dEmo">-</b> | 压制 <b id="vSuppress" style="color:#ff6b6b">0%</b> | dist <b id="vDist" style="color:#0ea5e9">0%</b></div>
+  <div style="margin-top:4px;font-size:12px">
+    <button id="btnVadCtl" onclick="toggleVadControl()" style="border:1px solid #555;border-radius:3px;background:rgba(0,200,0,0.2);color:#0f0;cursor:pointer;padding:1px 6px">VAD 开</button>
+    <button id="btnBlinkCtl" onclick="toggleBlinkControl()" style="border:1px solid #555;border-radius:3px;background:rgba(0,200,0,0.2);color:#0f0;cursor:pointer;padding:1px 6px">眨眼 开</button>
+    <button id="btnCycleCtl" onclick="toggleCycleControl()" style="border:1px solid #555;border-radius:3px;background:rgba(0,200,0,0.2);color:#0f0;cursor:pointer;padding:1px 6px">循环 开</button>
+  </div>
+</div>
+
+<!-- 说话模式 badge (右上角, 本地播放状态) -->
+<div id="ioBadge"
+  style="position:fixed;top:12px;right:12px;color:#fff;font-size:15px;
+    background:rgba(0,0,0,0.7);padding:6px 14px;border-radius:10px;
+    z-index:10;white-space:nowrap;border:1px solid #5abe6e">🎧 倾听中</div>
+
+<!-- ====== L2D 库 (CDN) ====== -->
+<script src="https://unpkg.com/l2d/dist/index.min.js"></script>
+
+<script>
+// ============================================================
+//  Mini Coin Live2D v2 — 从零重写，干净可控
+//  基于 hacxy/l2d (MIT) — API 文档: https://l2d.hacxy.cn
+// ============================================================
+
+// ── 工具函数 ──
+function $(id) { return document.getElementById(id); }
+function log(msg) {
+  console.log('[L2D-v2]', msg);
+  const bar = $('statusBar');
+  if (bar) bar.textContent = msg;
+}
+function err(msg) {
+  console.error('[L2D-v2]', msg);
+  const bar = $('statusBar');
+  if (bar) bar.textContent = '❌ ' + msg;
+}
+
+// ── 情绪参数定义 ──
+// 格式: { paramId: targetValue }
+// 0-1 范围(表情参数): Eye*, Brow*, Mouth*, Cheek, Param10~23
+// 角度范围(可超1): ParamAngle*, ParamBodyAngle*
+// 
+// 设计参考: NEKO 项目情绪系统 + Live2D表现力方案调研
+// 核心理念: 每个情绪同时控制面部 + 身体参数, 同步变化才有说服力
+//
+const EMOTIONS = {
+  neutral: {
+    set: {
+      // 头部
+      ParamAngleY: 0, ParamAngleX: 0, ParamAngleZ: 0,
+      // 身体
+      ParamBodyAngleY: 0, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      // 眼睛 (放松睁眼75%, 非100%)
+      ParamEyeLOpen: 0.75, ParamEyeROpen: 0.75,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      // 眉毛
+      ParamBrowLY: 0, ParamBrowRY: 0,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      // 嘴巴
+      ParamMouthForm: 0, ParamMouthOpenY: 0,
+      // 脸颊
+      ParamCheek: 0,
+      // 配件
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  happy_v1: {
+    set: {
+      // v1 标准笑: 右歪头 + 眯眯眼 + 张嘴笑
+      ParamAngleY: 0, ParamAngleX: 0, ParamAngleZ: 13,
+      ParamBodyAngleY: -5, ParamBodyAngleX: 0, ParamBodyAngleZ: -8,
+      ParamEyeLOpen: 0.85, ParamEyeROpen: 0.85,
+      ParamEyeLSmile: 0.7, ParamEyeRSmile: 0.7,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: -0.50, ParamBrowRY: -0.50,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 2.50, ParamMouthOpenY: 0.50,
+      ParamCheek: 1.25,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    },
+    perform: {
+      sway: { param:'ParamBodyAngleZ', amp:0.6, freq:1.2 },
+    }
+  },
+
+  happy_v2: {
+    set: {
+      // v2 扭头笑: 扭头左转 + 偷瞄回来 + 抿嘴笑 (傲娇感)
+      ParamAngleY: 0, ParamAngleX: 15, ParamAngleZ: 0,
+      ParamBodyAngleY: -3, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.80, ParamEyeROpen: 0.80,
+      ParamEyeLSmile: 0.6, ParamEyeRSmile: 0.6,
+      ParamEyeBallX: -0.60, ParamEyeBallY: 0,
+      ParamBrowLY: -0.30, ParamBrowRY: -0.30,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 1.50, ParamMouthOpenY: 0.20,
+      ParamCheek: 1.50,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    },
+    perform: {
+      peek: { param:'ParamAngleX', amp:1.0, freq:1.8 },
+    }
+  },
+
+  happy_v3: {
+    set: {
+      // v3 大笑: 头后仰 + 张嘴大笑 + 眯眼更深
+      ParamAngleY: 10, ParamAngleX: 0, ParamAngleZ: 5,
+      ParamBodyAngleY: 3, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.60, ParamEyeROpen: 0.60,
+      ParamEyeLSmile: 0.8, ParamEyeRSmile: 0.8,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: -0.50, ParamBrowRY: -0.50,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 2.50, ParamMouthOpenY: 1.00,
+      ParamCheek: 1.00,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    },
+    perform: {
+      // 大笑时节律动作: 点头~2.5Hz + 身体前后晃~2Hz + 头微摆~2Hz
+      nod:     { param:'ParamAngleY',     amp:2.5, freq:2.5 },
+      bounce:  { param:'ParamBodyAngleY', amp:1.5, freq:2.0 },
+      shake:   { param:'ParamAngleX',     amp:1.5, freq:2.0 },
+    }
+  },
+
+  happy_v4: {
+    set: {
+      // v4 憋笑: 低头 + 抿嘴闭唇 + 脸颊鼓 + 微眯笑眼 (忍住)
+      ParamAngleY: -5, ParamAngleX: 0, ParamAngleZ: 0,
+      ParamBodyAngleY: 0, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.70, ParamEyeROpen: 0.70,
+      ParamEyeLSmile: 0.5, ParamEyeRSmile: 0.5,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: -0.30, ParamBrowRY: -0.30,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 0.80, ParamMouthOpenY: 0.0,
+      ParamCheek: 1.80,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    },
+    perform: {
+      hold: { param:'ParamBodyAngleZ', amp:0.4, freq:0.8 },
+    }
+  },
+
+  happy_v5: {
+    set: {
+      // v5 调皮笑: 单眉上挑 + 歪头左 + 单边嘴角 (恶作剧脸)
+      ParamAngleY: 5, ParamAngleX: -10, ParamAngleZ: -10,
+      ParamBodyAngleY: 0, ParamBodyAngleX: 0, ParamBodyAngleZ: 5,
+      ParamEyeLOpen: 0.90, ParamEyeROpen: 0.90,
+      ParamEyeLSmile: 0.5, ParamEyeRSmile: 0.5,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: -0.80, ParamBrowRY: -0.10,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 1.50, ParamMouthOpenY: 0.30,
+      ParamCheek: 1.00,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    },
+    perform: {
+      wiggle: { param:'ParamAngleZ', amp:0.8, freq:2.2 },
+    }
+  },
+
+  sad: {
+    variants: [
+      { name: 'sad_v1', dur: 3500 },  // 标准悲伤: 仰头哭 + 八字眉 + 扁嘴
+      { name: 'sad_v2', dur: 3000 },  // 低头哭 (失声痛哭)
+    ]
+  },
+  sad_v1: {
+    set: {
+      // v1 标准悲伤: 仰头哭 + 八字眉 + 扁嘴
+      ParamAngleY: 5, ParamAngleX: 0, ParamAngleZ: 0,
+      ParamBodyAngleY: -3, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.7, ParamEyeROpen: 0.7,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: -0.50,
+      ParamBrowLY: 1.50, ParamBrowRY: 1.50,
+      ParamBrowLX: -0.50, ParamBrowRX: 0.50,
+      ParamBrowLAngle: -1.50, ParamBrowRAngle: -1.50,
+      ParamBrowLForm: 1.50, ParamBrowRForm: 1.50,
+      ParamMouthForm: -1.50, ParamMouthOpenY: 0,
+      ParamCheek: 0,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  sad_v2: {
+    set: {
+      // v2 低头哭 (失声痛哭): 深低头-25 + 蜷缩-10 + 嘴张开0.3抽气 + 眼眶红
+      ParamAngleY: -50, ParamAngleX: 0, ParamAngleZ: 0,
+      ParamBodyAngleY: -20, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.4, ParamEyeROpen: 0.4,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: -1.6,
+      ParamBrowLY: 3.6, ParamBrowRY: 3.6,
+      ParamBrowLX: -1, ParamBrowRX: 1,
+      ParamBrowLAngle: -4, ParamBrowRAngle: -4,
+      ParamBrowLForm: 3, ParamBrowRForm: 3,
+      ParamMouthForm: -4, ParamMouthOpenY: 0.6,
+      ParamCheek: 1.2,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  angry_v1: {
+    set: {
+      // v1 暴躁怒 (爆发型): 歪头25°挑衅 + 前倾攻击 + 瞪眼 + V字眉 + 嘴微张
+      ParamAngleY: 0, ParamAngleX: 0, ParamAngleZ: 25,
+      ParamBodyAngleY: -8, ParamBodyAngleX: 0, ParamBodyAngleZ: -8,
+      ParamEyeLOpen: 0.9, ParamEyeROpen: 0.9,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: -2.00, ParamBrowRY: -2.00,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 1.50, ParamBrowRAngle: 1.50,
+      ParamBrowLForm: 2.50, ParamBrowRForm: 2.50,
+      ParamMouthForm: 1.00, ParamMouthOpenY: 0.50,
+      ParamCheek: 1.00,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  angry_v2: {
+    set: {
+      // v2 冷怒 (冰点): 昂头俯视+眯眼+嘴抿紧+身体直立 (用鼻孔看人)
+      ParamAngleY: 10, ParamAngleX: 0, ParamAngleZ: 0,
+      ParamBodyAngleY: 0, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 1.4, ParamEyeROpen: 1.4,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: -3, ParamBrowRY: -3,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 2, ParamBrowRAngle: 2,
+      ParamBrowLForm: 3, ParamBrowRForm: 3,
+      ParamMouthForm: -0.6, ParamMouthOpenY: 0,
+      ParamCheek: 1,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  angry_v3: {
+    set: {
+      // v3 隐忍怒 (憋着): 低头扭头回避+眯眼避开+咬紧牙关+身体绷直
+      ParamAngleY: -10, ParamAngleX: 12, ParamAngleZ: 0,
+      ParamBodyAngleY: 4, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 1.2, ParamEyeROpen: 1.2,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: -0.6, ParamEyeBallY: 0,
+      ParamBrowLY: -3.6, ParamBrowRY: -3.6,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 2.4, ParamBrowRAngle: 2.4,
+      ParamBrowLForm: 4, ParamBrowRForm: 4,
+      ParamMouthForm: 0.6, ParamMouthOpenY: 0,
+      ParamCheek: 1.6,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  angry_v4: {
+    set: {
+      // v4 嘲讽怒 (阴阳怪气): 不对称挑眉+歪头+假笑弧+斜眼看 (Oh really?)
+      ParamAngleY: 6, ParamAngleX: 20, ParamAngleZ: 20,
+      ParamBodyAngleY: -6, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 1.6, ParamEyeROpen: 1.6,
+      ParamEyeLSmile: 0.6, ParamEyeRSmile: 0.6,
+      ParamEyeBallX: -0.8, ParamEyeBallY: 0,
+      ParamBrowLY: -1.6, ParamBrowRY: -3,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 1, ParamBrowRAngle: 3,
+      ParamBrowLForm: 2, ParamBrowRForm: 4,
+      ParamMouthForm: 1.6, ParamMouthOpenY: 0.2,
+      ParamCheek: 1.2,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  surprise_v1: {
+    set: {
+      // v1 纯惊讶: 抬眉+瞪眼+张嘴+后仰 (中性惊讶, 还没判断好坏)
+      ParamAngleY: 3, ParamAngleX: 0, ParamAngleZ: 0,
+      ParamBodyAngleY: -3, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 1.20, ParamEyeROpen: 1.20,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: 1.50, ParamBrowRY: 1.50,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 0, ParamMouthOpenY: 1.00,
+      ParamCheek: 0,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  surprise_v2: {
+    set: {
+      // v2 惊喜 (Pleasant shock): 瞪眼+笑弧+张嘴笑+脸红
+      ParamAngleY: 6, ParamAngleX: 0, ParamAngleZ: 0,
+      ParamBodyAngleY: -10, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 2.2, ParamEyeROpen: 2.2,
+      ParamEyeLSmile: 0.8, ParamEyeRSmile: 0.8,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: 2.4, ParamBrowRY: 2.4,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 2, ParamMouthOpenY: 1.2,
+      ParamCheek: 2,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  surprise_v4: {
+    set: {
+      // v4 怀疑惊讶 (Questioning/You kidding?): 不对称眉+斜眼+歪头+假笑
+      ParamAngleY: 10, ParamAngleX: 16, ParamAngleZ: 10,
+      ParamBodyAngleY: -6, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 1.8, ParamEyeROpen: 1.8,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: -0.6, ParamEyeBallY: 0,
+      ParamBrowLY: 1.6, ParamBrowRY: 3,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 0.6, ParamMouthOpenY: 0.2,
+      ParamCheek: 0,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  fear_v1: {
+    set: {
+      // v1 害怕 表演版×2
+      ParamAngleY: -25, ParamAngleX: 20, ParamAngleZ: 0,
+      ParamBodyAngleY: 16, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.35, ParamEyeROpen: 0.35,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: -0.80, ParamEyeBallY: -0.20,
+      ParamBrowLY: -1.00, ParamBrowRY: -1.00,
+      ParamBrowLAngle: 3.00, ParamBrowRAngle: 3.00,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: -2.00, ParamMouthOpenY: 0.24,
+      ParamCheek: 0.60,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  fear_v3: {
+    set: {
+      // v3 惊恐 (Abject terror): 头后仰+瞪最大+平眉高抬聚拢+嘴张呈惊恐+后缩
+      ParamAngleY: 20, ParamAngleX: 0, ParamAngleZ: 0,
+      ParamBodyAngleY: 20, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 2.4, ParamEyeROpen: 2.4,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: 3, ParamBrowRY: 3,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 2, ParamBrowRAngle: 2,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: -1.6, ParamMouthOpenY: 1.2,
+      ParamCheek: 0,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  think_v1: {
+    set: {
+      // v1 好奇: 歪头-8°+抬眉+睁大+前倾-3+眼球偏移
+      ParamAngleZ: -8, ParamBodyAngleY: -3,
+      ParamEyeLOpen: 1.09, ParamEyeROpen: 1.09,
+      ParamBrowLY: 0.90, ParamBrowRY: 0.90,
+      ParamEyeBallX: 0.30,
+      ParamMouthForm: 0.30,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  think_v2: {
+    set: {
+      // v2 侧头听 (Tilted listening): 更大歪头+柔和+张嘴微(完全被吸引)
+      ParamAngleZ: -24, ParamBodyAngleY: -10,
+      ParamEyeLOpen: 2, ParamEyeROpen: 2,
+      ParamBrowLY: 1.2, ParamBrowRY: 1.2,
+      ParamEyeBallX: 0.4,
+      ParamMouthForm: 0.4, ParamMouthOpenY: 0.2,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  think_v3: {
+    set: {
+      // v3 探究 (Investigating): 前倾更多+眯眼聚焦+微低头+眉微压
+      ParamAngleZ: -6, ParamBodyAngleY: -16,
+      ParamAngleY: -6,
+      ParamEyeLOpen: 1.8, ParamEyeROpen: 1.8,
+      ParamBrowLY: 0.8, ParamBrowRY: 0.8,
+      ParamBrowLAngle: 0.6, ParamBrowRAngle: 0.6,
+      ParamEyeBallX: 1,
+      ParamMouthForm: -0.4,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  confused: {
+    variants: [
+      { name: 'confused_v1', dur: 3000 },  // 困惑: 歪头+蚊香眼
+    ]
+  },
+  confused_v1: {
+    set: {
+      // 头部: 微歪 + 微偏
+      ParamAngleY: 0, ParamAngleX: 8, ParamAngleZ: 0,
+      // 身体: 保持
+      ParamBodyAngleY: 0, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      // 眼睛: 正常
+      ParamEyeLOpen: 1, ParamEyeROpen: 1,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 1.00, ParamEyeBallY: -1.00,
+      // 眉毛: 不对称 (一高一低)
+      ParamBrowLY: -1.00, ParamBrowRY: 1.00,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 1.00, ParamBrowRAngle: -0.50,
+      ParamBrowLForm: 1.50, ParamBrowRForm: 1.50,
+      // 嘴巴: 微歪
+      ParamMouthForm: 1.00, ParamMouthOpenY: 0,
+      // 脸颊: 无
+      ParamCheek: 0,
+      // 配件: 眼镜 + 蚊香眼
+      Param10: 5, Param11: 0, Param12: 2.50,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  care_v1: {
+    set: {
+      // v1 关心: 身体前倾-10 + 歪头+4 + 微笑 + 温柔注视
+      ParamBodyAngleY: -10, ParamAngleZ: 4, ParamAngleY: 2,
+      ParamEyeLOpen: 0.95, ParamEyeROpen: 0.95,
+      ParamEyeBallY: -0.20,
+      ParamBrowLY: -0.30, ParamBrowRY: -0.30,
+      ParamMouthForm: 0.50,
+      Param10: 0, Param11: 0, Param12: 0, Param23: 0, Param18: 1,
+    }
+  },
+
+  care_v2: {
+    set: {
+      // v2 温柔倾听 (Warm listening): 歪头+微笑+柔和眼神+开放姿态
+      ParamBodyAngleY: -10, ParamAngleZ: 16, ParamAngleY: 0,
+      ParamEyeLOpen: 1.7, ParamEyeROpen: 1.7,
+      ParamEyeLSmile: 0.8, ParamEyeRSmile: 0.8,
+      ParamEyeBallY: 0,
+      ParamBrowLY: -0.4, ParamBrowRY: -0.4,
+      ParamMouthForm: 1.2, ParamMouthOpenY: 0.1,
+      Param10: 0, Param11: 0, Param12: 0, Param23: 0, Param18: 2,
+    }
+  },
+
+  care_v3: {
+    set: {
+      // v3 心疼 (Worried care): 前倾更多+眉微蹙+嘴微抿+眼神更深 (听你受苦)
+      ParamBodyAngleY: -30, ParamAngleZ: 0, ParamAngleY: -6,
+      ParamEyeLOpen: 1.8, ParamEyeROpen: 1.8,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallY: -0.6,
+      ParamBrowLY: 0.6, ParamBrowRY: 0.6,
+      ParamBrowLAngle: -1, ParamBrowRAngle: -1,
+      ParamMouthForm: -0.4, ParamMouthOpenY: 0,
+      Param10: 0, Param11: 0, Param12: 0, Param23: 0, Param18: 2,
+    }
+  },
+
+  hurt: {
+    variants: [
+      { name: 'hurt_v1', dur: 3500 },  // 受伤 (大哭)
+    ]
+  },
+  hurt_v1: {
+    set: {
+      // v1 大哭 (表演级): 深低头-25 + 蜷缩-20 + 紧眼 + 泪目八字眉2.5 + 扁嘴-3.0
+      ParamAngleY: -25, ParamAngleX: -12, ParamAngleZ: 0,
+      ParamBodyAngleY: -20, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.0, ParamEyeROpen: 0.0,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: -1.0,
+      ParamBrowLY: 2.50, ParamBrowRY: 2.50,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 2.50, ParamBrowRAngle: 2.50,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: -3.0, ParamMouthOpenY: 0.20,
+      ParamCheek: 1.0,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  worried_v1: {
+    set: {
+      // v1 担心 (中度): 抬眉1.6+八字眉-2+睁眼1.1+抿嘴-1+低头-10+偏头8+后缩-12
+      ParamAngleY: -10, ParamAngleX: 8, ParamAngleZ: 0,
+      ParamBodyAngleY: -12, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 1.10, ParamEyeROpen: 1.10,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: 1.60, ParamBrowRY: 1.60,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: -2.00, ParamBrowRAngle: -2.00,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: -1.00, ParamMouthOpenY: 0.30,
+      ParamCheek: 0,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  worried_v2: {
+    set: {
+      // v2 轻度担心 (Mild): 眉微抬+眼微睁+嘴自然 (还不太确定)
+      ParamAngleY: -3, ParamAngleX: 0, ParamAngleZ: 0,
+      ParamBodyAngleY: -3, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.85, ParamEyeROpen: 0.85,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: 0.60, ParamBrowRY: 0.60,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: -0.60, ParamBrowRAngle: -0.60,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: -0.20, ParamMouthOpenY: 0,
+      ParamCheek: 0,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  worried_v3: {
+    set: {
+      // v3 焦虑不安 (Anxiety): 抬眉更高+八字眉更深+睁更大+嘴松开+身体前倾(坐不住)
+      ParamAngleY: -5, ParamAngleX: 4, ParamAngleZ: 0,
+      ParamBodyAngleY: -5, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 1.05, ParamEyeROpen: 1.05,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: 1.30, ParamBrowRY: 1.30,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: -1.50, ParamBrowRAngle: -1.50,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: -0.30, ParamMouthOpenY: 0.15,
+      ParamCheek: 0.30,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  worried_v4: {
+    set: {
+      // v4 紧张咬唇 (Nail-biting): 低头最深+咬嘴唇+眉头紧锁+眼神躲闪
+      ParamAngleY: -15, ParamAngleX: 10, ParamAngleZ: 0,
+      ParamBodyAngleY: -10, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.80, ParamEyeROpen: 0.80,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: -0.40, ParamEyeBallY: 0,
+      ParamBrowLY: 1.00, ParamBrowRY: 1.00,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: -1.50, ParamBrowRAngle: -1.50,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: -0.60, ParamMouthOpenY: 0,
+      ParamCheek: 0.20,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  amused: {
+    variants: [
+      { name: 'amused_v1', dur: 3000 },  // 忍俊不禁
+    ]
+  },
+  amused_v1: {
+    set: {
+      ParamAngleZ: 8,
+      ParamBodyAngleY: 0,
+      ParamEyeLSmile: 0.40, ParamEyeRSmile: 0.40,
+      ParamBrowLY: -0.30, ParamBrowRY: -0.30,
+      ParamMouthForm: 1.50, ParamMouthOpenY: 0.30,
+      Param10: 0, Param11: 0, Param12: 0, Param23: 0, Param18: 1,
+    }
+  },
+
+  excited: {
+    variants: [
+      { name: 'excited_v1', dur: 2500 },  // 兴奋
+    ]
+  },
+  excited_v1: {
+    set: {
+      ParamAngleZ: 15,
+      ParamBodyAngleY: -6,
+      ParamEyeLOpen: 0.95, ParamEyeROpen: 0.95,
+      ParamEyeLSmile: 0.80, ParamEyeRSmile: 0.80,
+      ParamBrowLY: -0.60, ParamBrowRY: -0.60,
+      ParamMouthForm: 2.80, ParamMouthOpenY: 0.60,
+      ParamCheek: 1.00,
+      Param10: 0, Param11: 0, Param12: 0, Param23: 0, Param18: 1,
+    }
+  },
+
+  contempt_v1: {
+    set: {
+      // v1 傲娇轻蔑: 扭头25+昂头15+后倾-16+微闭眼0.6+偷瞄+憋笑+脸红
+      ParamAngleY: 15, ParamAngleX: 25, ParamAngleZ: 0,
+      ParamBodyAngleY: -16, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.60, ParamEyeROpen: 0.60,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: -0.80, ParamEyeBallY: 0,
+      ParamBrowLY: 0.50, ParamBrowRY: 0.50,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 1.00, ParamMouthOpenY: 0,
+      ParamCheek: 1.50,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  contempt_v2: {
+    set: {
+      // v2 冷蔑 (Cold disdain): 昂头+冷眼+嘴角微扬+无脸红(真正的冷)
+      ParamAngleY: 20, ParamAngleX: 0, ParamAngleZ: 0,
+      ParamBodyAngleY: -10, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 1, ParamEyeROpen: 1,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: 0,
+      ParamBrowLY: 0.4, ParamBrowRY: 0.4,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 1, ParamMouthOpenY: 0,
+      ParamCheek: 0,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  contempt_v3: {
+    set: {
+      // v3 居高临下 (Looking down nose): 昂头最高+眯眼+身体后仰+嘴角下拉
+      ParamAngleY: 40, ParamAngleX: 20, ParamAngleZ: 0,
+      ParamBodyAngleY: -20, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.8, ParamEyeROpen: 0.8,
+      ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+      ParamEyeBallX: 0, ParamEyeBallY: -0.4,
+      ParamBrowLY: -0.4, ParamBrowRY: -0.4,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0.6, ParamBrowRAngle: 0.6,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: -0.6, ParamMouthOpenY: 0,
+      ParamCheek: 0,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  contempt_v4: {
+    set: {
+      // v4 假笑 (Fake sweet contempt): 歪头甜笑+冷眼+脸红 (阴阳怪气的关心)
+      ParamAngleY: 10, ParamAngleX: 30, ParamAngleZ: 20,
+      ParamBodyAngleY: -10, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 1.4, ParamEyeROpen: 1.4,
+      ParamEyeLSmile: 0.8, ParamEyeRSmile: 0.8,
+      ParamEyeBallX: -0.6, ParamEyeBallY: 0,
+      ParamBrowLY: -0.4, ParamBrowRY: -0.4,
+      ParamBrowLX: 0, ParamBrowRX: 0,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 2.4, ParamMouthOpenY: 0.2,
+      ParamCheek: 3,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  shy_v1: {
+    set: {
+      // v1 害羞 (满分): 深低头-25+转头20+眼神下移+憋笑0.8+脸红2.0+后缩-12
+      ParamAngleY: -25, ParamAngleX: 20, ParamAngleZ: 0,
+      ParamBodyAngleY: -12, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 0.60, ParamEyeROpen: 0.60,
+      ParamEyeLSmile: 0.60, ParamEyeRSmile: 0.60,
+      ParamEyeBallX: 0, ParamEyeBallY: -0.80,
+      ParamBrowLY: -0.20, ParamBrowRY: -0.20,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 0.80, ParamMouthOpenY: 0.05,
+      ParamCheek: 2.0,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 1,
+    }
+  },
+
+  shy_v2: {
+    set: {
+      // v2 被夸害羞 (Praise blush): 微低头+偏头+笑眼+脸红+幸福憋笑
+      ParamAngleY: -20, ParamAngleX: 16, ParamAngleZ: 10,
+      ParamBodyAngleY: -12, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+      ParamEyeLOpen: 1.4, ParamEyeROpen: 1.4,
+      ParamEyeLSmile: 1.4, ParamEyeRSmile: 1.4,
+      ParamEyeBallX: 0, ParamEyeBallY: -0.8,
+      ParamBrowLY: -0.6, ParamBrowRY: -0.6,
+      ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+      ParamBrowLForm: 0, ParamBrowRForm: 0,
+      ParamMouthForm: 2, ParamMouthOpenY: 0.2,
+      ParamCheek: 3.6,
+      Param10: 0, Param11: 0, Param12: 0,
+      Param23: 0, Param18: 2,
+    }
+  },
+
+  tense_v1: {
+    set: {
+      // v1 紧张 (警觉): AU4眉压 + AU5警觉睁眼 + 身体后仰
+      ParamAngleY: 2, ParamBodyAngleY: 6,
+      ParamEyeLOpen: 1.12, ParamEyeROpen: 1.12,
+      ParamBrowLY: -0.90, ParamBrowRY: -0.90,
+      ParamBrowLForm: 0.90, ParamBrowRForm: 0.90,
+      ParamMouthForm: 0,
+      Param10: 0, Param11: 0, Param12: 0, Param23: 0, Param18: 1,
+    }
+  },
+
+  tense_v2: {
+    set: {
+      // v2 警戒扫描 (Vigilant): 眼睁更大+眉压更紧+眼球偏移+嘴紧 (四处看)
+      ParamAngleY: 6, ParamBodyAngleY: 16,
+      ParamEyeLOpen: 2.3, ParamEyeROpen: 2.3,
+      ParamEyeBallX: 0.8,
+      ParamBrowLY: -2.4, ParamBrowRY: -2.4,
+      ParamBrowLForm: 2.4, ParamBrowRForm: 2.4,
+      ParamMouthForm: -0.6,
+      Param10: 0, Param11: 0, Param12: 0, Param23: 0, Param18: 2,
+    }
+  },
+
+
+  tense_v4: {
+    set: {
+      // v4 惊跳 (Startle): 眼瞪最大+身体猛后缩+嘴张开+眉高抬 (吓一跳)
+      ParamAngleY: 10, ParamBodyAngleY: 20,
+      ParamEyeLOpen: 2.4, ParamEyeROpen: 2.4,
+      ParamEyeBallX: 0,
+      ParamBrowLY: -1.2, ParamBrowRY: -1.2,
+      ParamBrowLAngle: 2, ParamBrowRAngle: 2,
+      ParamBrowLForm: 1, ParamBrowRForm: 1,
+      ParamMouthForm: -0.8, ParamMouthOpenY: 1.2,
+      Param10: 0, Param11: 0, Param12: 0, Param23: 0, Param18: 2,
+    }
+  },
+
+  approach: {
+    variants: [
+      { name: 'approach_v1', dur: 3000 },  // 关切反射
+    ]
+  },
+  approach_v1: {
+    set: {
+      // 关切反射: 前倾+歪头+微低+睁眼+微笑
+      ParamBodyAngleY: -10, ParamAngleZ: 4, ParamAngleY: 2,
+      ParamEyeLOpen: 0.95, ParamEyeROpen: 0.95,
+      ParamEyeBallY: -0.20,
+      ParamBrowLY: -0.30, ParamBrowRY: -0.30,
+      ParamMouthForm: 0.50,
+      Param10: 0, Param11: 0, Param12: 0, Param23: 0, Param18: 1,
+    }
+  },
+};
+
+// ── 情绪变体循环配置 ──
+// 情绪持续期间自动随机切换变体, 模拟人类表情的自然波动
+// dur: 该变体的持续时间 (ms), 不同变体时长不同避免规律感
+const EMOTION_CYCLES = {
+  sad: {
+    variants: [
+      { name: 'sad_v1', dur: 3500 },  // 标准悲伤: 仰头哭 + 八字眉 + 扁嘴
+      { name: 'sad_v2', dur: 3000 },  // 低头哭 (失声痛哭)
+    ]
+  },
+  angry: {
+    variants: [
+      { name: 'angry_v1', dur: 3000 },  // 暴躁怒 (爆发型)
+      { name: 'angry_v2', dur: 3500 },  // 冷怒
+      { name: 'angry_v3', dur: 3000 },  // 隐忍
+      { name: 'angry_v4', dur: 2500 },  // 嘲讽
+    ]
+  },
+  fear: {
+    variants: [
+      { name: 'fear_v1', dur: 3000 },  // 害怕 表演版×2 (颤抖)
+      { name: 'fear_v3', dur: 2500 },  // 惊恐
+    ]
+  },
+  happy: {
+    variants: [
+      { name: 'happy_v1',  dur: 3500 },  // 标准笑: 中等
+      { name: 'happy_v2', dur: 2500 },  // 扭头笑: 短
+      { name: 'happy_v4', dur: 3000 },  // 憋笑: 中等
+      { name: 'happy_v5', dur: 2200 },  // 调皮笑: 短
+    ]
+  },
+  surprise: {
+    variants: [
+      { name: 'surprise_v1', dur: 2500 },
+      { name: 'surprise_v2', dur: 3000 },
+      { name: 'surprise_v4', dur: 3500 },
+    ]
+  },
+  worried: {
+    variants: [
+      { name: 'worried_v1',    dur: 4500 },  // 担心: 中等
+      { name: 'worried_v2', dur: 3500 },  // 轻度担心: 短
+      { name: 'worried_v3', dur: 5500 },  // 焦虑不安: 最长
+      { name: 'worried_v4', dur: 4000 },  // 紧张咬唇: 中等
+    ]
+  },
+  contempt: {
+    variants: [
+      { name: 'contempt_v1',    dur: 6000 },  // 傲娇轻蔑: 长(状态机)
+      { name: 'contempt_v2', dur: 3500 },  // 冷蔑: 短
+      { name: 'contempt_v3', dur: 4000 },  // 居高临下: 中等
+      { name: 'contempt_v4', dur: 3000 },  // 假笑: 短
+    ]
+  },
+  shy: {
+    variants: [
+      { name: 'shy_v1',    dur: 4500 },
+      { name: 'shy_v2', dur: 3500 },
+    ]
+  },
+  think: {
+    variants: [
+      { name: 'think_v1',   dur: 3500 },
+      { name: 'think_v2', dur: 4000 },
+      { name: 'think_v3', dur: 4500 },
+    ]
+  },
+  care: {
+    variants: [
+      { name: 'care_v1',    dur: 4000 },  // 关心: 温柔注视
+      { name: 'care_v2', dur: 4500 },  // 倾听: 持续关注
+      { name: 'care_v3', dur: 3500 },  // 心疼: 稍短, 更 intense
+    ]
+  },
+  tense: {
+    variants: [
+      { name: 'tense_v1',   dur: 3500 },
+      { name: 'tense_v2', dur: 4500 },
+      { name: 'tense_v4', dur: 2000 },
+    ]
+  },
+};
+
+// ── 全局状态 ──
+let inst = null;     // L2D 实例 (L2D.init 返回值)
+let currentEmotion = 'neutral';
+let currentIntensity = 0;  // 律度 0~4, 0=重置
+let _vadControl = true;   // VAD 控制身体开关 (默认开, 表情动作时自动关)
+let _blinkControl = true; // 眨眼控制开关 (默认开, 表情动作时自动关)
+let _cyclePaused = false; // 循环暂停开关 (表情动作时暂停, 避免抢控制权)
+let _emotePrevVad = true, _emotePrevBlink = true, _emotePrevCycle = false;
+let _emoteStartT = 0;
+
+// ── 说话模式 (14:32 新增): 说话时表情 delta×2×(1-压制) + 情绪化点头 ──
+let _speakMode = false;    // 手动开关 (测试用); 真实说话 = _lipAnalyser 在播
+let _lipSuppress = 0;      // 桥上来的压制度 0~1 (dist 压制)
+(function(){
+  document.getElementById('donePort').value = localStorage.getItem('donePort') || '18004';
+})();
+function saveDonePort(){
+  localStorage.setItem('donePort', document.getElementById('donePort').value);
+}
+function _isSpeaking() { return _speakMode || _vocalizing; }
+// 情绪化说话点头表: 说话时按当前情绪驱动头部节奏 (freq=Hz, amp=幅度, axis=轴向)
+// 幅度 = amp × 情绪强度r (14:43); amp 已调大到可感知 (开关测试满幅)
+const SPK_NODE = {
+  happy:     { freq: 1.5, amp: 6.0, axis: 'ParamAngleY' },  // 弹跳点头
+  angry:     { freq: 2.0, amp: 8.0, axis: 'ParamAngleY' },  // 快而重
+  sad:       { freq: 0.8, amp: 3.0, axis: 'ParamAngleY' },  // 慢而沉
+  fear:      { freq: 1.2, amp: 2.5, axis: 'ParamAngleY' },  // 碎点
+  surprise:  { freq: 0.5, amp: 2.5, axis: 'ParamAngleY' },  // 少点
+  default:   { freq: 0.85, amp: 5.0, axis: 'ParamAngleY' }, // 通用
+};
+
+// ── 话语级摆头/歪头 (16:50): 句子长度驱动, 不关联情绪强度 ──
+// 每句换向: 方向总与当前相反; 目标值 = 基准 × (1 ± 30% 随机) → 每次速度天然不同
+// 慢弹簧 SWING_SPRING (ζ≈1 临界, 95% 到位 ~1.8s, 覆盖大部分单句 1.2s 时长)
+const TURN_BASE = 18.4;            // 转头基准目标值(度), 23→18.4 (-20%, 17:59 用户调)
+const TILT_BASE = 12;              // 歪头基准目标值(度), 15→12 (-20%, 17:59 用户调)
+const SWING_JITTER = 0.3;          // 目标值随机浮动 ±30%
+const SWING_SPRING = { k: 2.8, c: 3.3 };  // ωn≈1.67, ζ≈0.99
+let _turnDir = 1;     // 当前转头方向 (+1/-1)
+let _tiltDir = 1;     // 当前歪头方向 (+1/-1)
+let _swingInit = false;            // 首次进入说话时初始化
+let _swingLastT = 0;               // 摆头弹簧上一帧时间
+let _swingDbgT = 0, _renderDbgT = 0;  // 调试日志限频 (17:38)
+const _swingTurn = { pos: 0, vel: 0, target: 0 };  // 转头慢弹簧
+const _swingTilt = { pos: 0, vel: 0, target: 0 };  // 歪头慢弹簧
+
+// ── 话语级点头 (17:25): 事件驱动, 情绪只影响方向, 不关联强度 ──
+// 句开始: target = 情绪方向 × 10°×(1±30%); 到位时间 ~1s±20% (随机 k ∝ 1/ts²)
+// 方向: 正面(happy/surprise/neutral)先抬头 +1; 负面(sad/fear/confused/angry...)先低头 -1
+// 句末(静音 gap 以后接): _endNod() → target=0 回情绪基准
+const NOD_BASE = 18;          // 点头基准目标值(度), 15→18 (+20%, 18:20 用户调)
+const NOD_JITTER = 0.3;       // 幅度随机 ±30%
+const NOD_TIME_BASE = 0.5;    // 到位时间基准 ~0.5s (0.6→0.5, 18:20 用户调, 正负20% → 0.4~0.6s)
+const NOD_TIME_JITTER = 0.2;  // 时间随机 ±20%
+const NOD_SPRING_K = 9;       // 到位 1s 对应刚度 (ζ=1: ts≈3/√k)
+const NOD_UP_EMOTIONS = new Set(['happy', 'surprise', 'neutral']);  // 正面情绪: 抬
+// peak=本次峰值, rising=true=抬升中 → 到位自动切回落 (上1下1循环)
+const _nodSpring = { pos: 0, vel: 0, target: 0, k: 9, c: 6, peak: 0, rising: true };
+
+function _emoNodDir() {       // 情绪方向: 正面抬 +1 / 其余负面低 -1
+  const baseEmo = (currentEmotion || 'neutral').replace(/_(v\d+)?$/, '');
+  return NOD_UP_EMOTIONS.has(baseEmo) ? 1 : -1;
+}
+
+function _nextNod() {         // 下一句: 情绪方向×幅度±30%, 到位时间±20%; 开始抬升
+  _nodSpring.peak = _emoNodDir() * NOD_BASE * (1 + (Math.random() * 2 - 1) * NOD_JITTER);
+  _nodSpring.target = _nodSpring.peak;
+  _nodSpring.rising = true;
+  const ts = NOD_TIME_BASE * (1 + (Math.random() * 2 - 1) * NOD_TIME_JITTER);  // 0.8~1.2s
+  _nodSpring.k = NOD_SPRING_K * Math.pow(NOD_TIME_BASE / ts, 2);   // k ∝ 1/ts²
+  _nodSpring.c = 2 * Math.sqrt(_nodSpring.k);  // ζ≈1 临界 (无过冲)
+}
+
+function _endNod() {          // 句末: 回落情绪基准 (待静音 gap 检测接入)
+  _nodSpring.target = 0;
+  _nodSpring.rising = false;
+}
+
+function _swingTarget(base) {      // 基准 × (1 ± 30%) 随机 → 幅度/速度每句不同
+  return base * (1 + (Math.random() * 2 - 1) * SWING_JITTER);
+}
+
+function _swingDirChange3(spring, dir, base, backProb) {  // 三态 (18:39): backProb回基线 / (1-back)×70%反向 / (1-back)×30%同向
+  const roll = Math.random();
+  if (roll < backProb) {
+    spring.target = 0;             // 回基线: 慢弹簧走回正面本身即肢体语言
+  } else if (roll < backProb + (1 - backProb) * 0.7) {   // 反向, 完整幅度
+    dir = -dir;
+    spring.target = dir * _swingTarget(base);
+  } else {                         // 同向, 半幅度增量
+    spring.target = spring.pos + dir * _swingTarget(base * 0.5);
+  }
+  return dir;
+}
+
+function _initSwing() {            // 说话模式开启/首次说话: 第一句随机方向
+  _turnDir = Math.random() > 0.5 ? 1 : -1;
+  _tiltDir = Math.random() > 0.5 ? 1 : -1;
+  _swingTurn.pos = 0; _swingTurn.vel = 0;
+  _swingTilt.pos = 0; _swingTilt.vel = 0;
+  _swingTurn.target = _turnDir * _swingTarget(TURN_BASE);
+  _swingTilt.target = _tiltDir * _swingTarget(TILT_BASE);
+  _nodSpring.pos = 0; _nodSpring.vel = 0;
+  _nextNod();                      // 首句点头: 情绪方向×幅度±30%
+  _swingInit = true;
+  log('触发下一句(首句)');
+}
+
+function nextSentence() {          // 下一句: 转头(回正30%) + 歪头(回正50%) 三态 + 点头一次
+  _turnDir = _swingDirChange3(_swingTurn, _turnDir, TURN_BASE, 0.3);   // 30%回基线 / 49%反 / 21%同
+  _tiltDir = _swingDirChange3(_swingTilt, _tiltDir, TILT_BASE, 0.5);   // 50%回基线 / 35%反 / 15%同
+  _nextNod();                      // 点头: 每句一次抬-落
+  log('触发下一句');
+}
+
+function _reapplyEmotion() {
+  if (currentEmotion && EMOTIONS[currentEmotion]) setEmotion(currentEmotion, currentIntensity || 1);
+}
+
+// ── 弹簧物理系统 (移植自 3D puppet 的 applySpringOvershoot) ──
+// 每个参数独立追踪, 二阶质量-弹簧-阻尼:
+//   force = k * (target - pos) - c * vel
+//   vel  += force * dt
+//   pos  += vel * dt
+//
+// ζ = c / (2*sqrt(k))
+// 不同轴向用不同刚度, 制造弧线运动 + 重叠动作效果
+// 头部: AngleX/Y/Z 用不同速度, 让头走弧线而不是直线
+// 身体: BodyAngle 稍慢, 体现质量惯性
+const PARAM_SPRINGS = {
+  // 头部 — 不同轴不同速度创造弧线
+  'ParamAngleX': { k: 55, c: 15 },   // fastest, ζ≈1.01 近临界阻尼
+  'ParamAngleY': { k: 40, c: 11 },   // medium, ζ≈0.87
+  'ParamAngleZ': { k: 28, c: 9 },    // slowest, ζ≈0.85
+  // 身体 — 均比头部慢, 体现质量
+  'ParamBodyAngleX': { k: 35, c: 10 },  // ζ≈0.85
+  'ParamBodyAngleY': { k: 35, c: 10 },  // ζ≈0.85
+  'ParamBodyAngleZ': { k: 28, c: 9 },   // ζ≈0.85
+};
+
+// 全局速度缩放 (1.0=正常, 0.5=半速)
+const TIME_SCALE = 0.75;
+
+// 镜像参数: 变体切换时70%概率左右翻转, 增加自然变化
+const MIRROR_PARAMS = new Set([
+  'ParamAngleX', 'ParamAngleZ',
+  'ParamBodyAngleX', 'ParamBodyAngleZ',
+  'ParamEyeBallX',
+]);
+
+// ── 参数分类 ──
+// 身体参数 (有质量 → 弹簧效果)
+const BODY_PARAMS = new Set([
+  'ParamAngleY', 'ParamAngleX', 'ParamAngleZ',
+  'ParamBodyAngleY', 'ParamBodyAngleX', 'ParamBodyAngleZ',
+]);
+// 上脸参数 (眉 + 眼)
+const UPPER_FACE_PARAMS = new Set([
+  'ParamBrowLY', 'ParamBrowRY', 'ParamBrowLX', 'ParamBrowRX',
+  'ParamBrowLAngle', 'ParamBrowRAngle', 'ParamBrowLForm', 'ParamBrowRForm',
+  'ParamEyeLOpen', 'ParamEyeROpen', 'ParamEyeLSmile', 'ParamEyeRSmile',
+  'ParamEyeBallX', 'ParamEyeBallY',
+]);
+// 下脸参数 (嘴 + 脸颊)
+const LOWER_FACE_PARAMS = new Set([
+  'ParamMouthForm', 'ParamMouthOpenY', 'ParamCheek',
+]);
+// 配件 (不参与 VAD 缩放)
+const ACC_PARAMS = new Set([
+  'Param10', 'Param11', 'Param12', 'Param23', 'Param18',
+]);
+
+// 弹簧状态: { paramId: { pos, vel } }
+let _springs = {};
+let _emitTarget = null;  // { paramId: targetVal, ... }
+let _setEmoSource = 'init'; // 追踪 setEmotion 调用来源
+let _lastSpringTime = 0; // 上一帧时间, 用于计算真实 dt
+
+// 渲染状态 (每帧)
+let _renderParams = {};     // 当前帧的最终参数
+let _actionOverrides = {};  // 临时动作覆盖
+
+// 折返跑 Ramp 状态 (变体过渡期间逐步趋近目标)
+let _rampState = null;
+
+// 弹簧稳定判定阈值
+const SPRING_STABLE_EPS = 0.001;
+
+// 眼珠抖动状态 (fear)
+let _fearShake = false;
+let _fearShakeTimer = null;
+
+// ── 重置所有参数 ──
+function resetAll() {
+  setEmotion('neutral');
+}
+
+// ── 说话模式开关 (14:32): 手动切到说话模式, 表情 delta×2×(1-压制) + 情绪化点头 ──
+function toggleSpeakMode() {
+  _speakMode = !_speakMode;
+  const tag = document.getElementById('speakModeTag');
+  if (tag) {
+    tag.textContent = _speakMode ? '开' : '关';
+    tag.style.color = _speakMode ? '#5abe6e' : '#888';
+  }
+  if (_speakMode) _initSwing();  // 开启说话模式 = 第一句开始 (随机方向)
+  _reapplyEmotion();
+
+  log('[SPEAK] mode=' + (_speakMode ? '开(说话)' : '关(倾听)'));
+}
+
+// ── 伸缩面板 ──
+function togglePanel(hdr) {
+  const bdy = hdr.nextElementSibling;
+  if (!bdy) return;
+  const closed = bdy.classList.toggle('closed');
+  hdr.classList.toggle('collapsed', closed);
+}
+
+// ── 律度缩放 (1分制: 1=满强度, 0=归零) ──
+function scaleVal(base, intensity) {
+  if (intensity <= 0) return 0;
+  return base * Math.min(1, intensity);
+}
+
+// ── 变体循环 (情绪持续中自动随机切换) ──
+let _cycleTimer = null;
+let _cycleCfg = null;    // 当前循环的配置对象
+
+function _scheduleNextVariant() {
+  const cfg = _cycleCfg;
+  if (!cfg) return;
+  // 找当前变体的 dur, 找不到就用 3s, 加 ±30% 随机波动防规律感
+  const cur = cfg.variants.find(v => v.name === currentEmotion);
+  const baseDelay = cur ? cur.dur : 3000;
+  const jitter = 0.7 + Math.random() * 0.6;  // 0.7~1.3
+  const delay = Math.round(baseDelay * jitter / TIME_SCALE);
+  _cycleTimer = setTimeout(() => {
+    if (!_cycleCfg) return;
+    if (_cyclePaused) { _scheduleNextVariant(); return; }  // 暂停: 延后但不切换
+
+    // ═══ 镜像选择: 70% 镜像当前表情, 30% 随机另一个变体 ═══
+    let next;
+    if (Math.random() < 0.7) {
+      next = cfg.variants.find(v => v.name === currentEmotion) || cfg.variants[0];
+    } else {
+      const others = cfg.variants.filter(v => v.name !== currentEmotion);
+      next = others.length > 0
+        ? others[Math.floor(Math.random() * others.length)]
+        : cfg.variants[0];
+    }
+
+    const nextDef = EMOTIONS[next.name];
+    if (!nextDef) {
+      _setEmoSource = 'CYC-fallback';
+      setEmotion(next.name, currentIntensity);
+      _scheduleNextVariant();
+      return;
+    }
+
+    // ═══ 折返跑: 记录 ramp 状态, 帧循环逐步趋近 + 交叉扰动 ═══
+    // 快照当前弹簧目标 (折返跑的起点)
+    const snapshot = _emitTarget ? { ..._emitTarget } : {};
+
+    // 提取下一变体的 body + 眼珠目标 (01:54: 眼珠加入 rampTarget, 镜像翻转循环自动处理, 不再单独补翻)
+    const rampTarget = {};
+    for (const [key, val] of Object.entries(nextDef.set)) {
+      if (BODY_PARAMS.has(key) || key === 'ParamEyeBallX') {
+        rampTarget[key] = scaleVal(val, currentIntensity);
+      }
+    }
+
+    // 镜像翻转: 70%选中同表情时, 左右翻转肢体参数 (MIRROR_PARAMS 含 ParamEyeBallX → 眼珠自动镜像)
+    if (next.name === currentEmotion) {
+      _mirrorSign = -1;
+      for (const [key, val] of Object.entries(rampTarget)) {
+        if (MIRROR_PARAMS.has(key)) {
+          rampTarget[key] = -val;
+        }
+      }
+    } else {
+      _mirrorSign = 1;
+    }
+
+    // 先调用 setEmotion (设面部/情绪名/按钮高亮等)
+    _setEmoSource = 'CYC';
+    setEmotion(next.name, currentIntensity);
+
+    // 覆盖 body 目标为起点值 (不由 setEmotion 跳到满值)
+    for (const key of Object.keys(rampTarget)) {
+      _emitTarget[key] = snapshot[key] !== undefined ? snapshot[key] : 0;
+    }
+
+    // 计算下一变体的总时长 (含 jitter)
+    const nextVcfg = cfg.variants.find(v => v.name === next.name);
+    const nextBaseMs = nextVcfg ? nextVcfg.dur : 3000;
+    const nextJitter = 0.7 + Math.random() * 0.6;
+    const nextTotalMs = Math.round(nextBaseMs * nextJitter);
+
+    // 建立 ramp 状态
+    _rampState = {
+      startTime: performance.now(),
+      initialSnapshot: { ..._emitTarget },
+      fullTarget: rampTarget,
+      totalDuration: nextTotalMs,
+      _lastSi: 0,
+      _sp: {},
+    };
+
+    _scheduleNextVariant();
+  }, delay);
+}
+
+function startEmotionCycle(baseName) {
+  if (_cycleCfg && _cycleCfg === EMOTION_CYCLES[baseName]) return;
+  stopEmotionCycle();
+  const cfg = EMOTION_CYCLES[baseName];
+  if (!cfg) return;
+  _cycleCfg = cfg;
+  _scheduleNextVariant();
+}
+
+function stopEmotionCycle() {
+  if (_cycleTimer) { clearTimeout(_cycleTimer); _cycleTimer = null; }
+  _cycleCfg = null;
+}
+
+// ── 应用情绪 (弹簧追踪目标) ──
+// regions: Set of 'upper'/'lower'/'body', 默认三个都设
+function setEmotion(name, intensity, regions) {
+  if (intensity === undefined) intensity = 1;
+  if (!regions) regions = new Set(['upper', 'lower', 'body']);
+
+  // 清除所有测试按钮的临时覆盖, 防止残留
+  _actionOverrides = {};
+
+  const oldEmo = currentEmotion;
+  const def = EMOTIONS[name];
+  if (!def) return;
+
+  currentEmotion = name;
+  currentIntensity = intensity;
+
+  // 构建目标参数 (按区域过滤)
+  const target = {};
+  const isVad = _vadRatio !== null;
+  // 说话模式表情放大: k = 说话 ? 2×(1-压制) : 1 (14:32)
+  const k = _isSpeaking() ? 2 * (1 - _lipSuppress) : 1;
+  for (const [key, val] of Object.entries(def.set)) {
+    const inUpper = UPPER_FACE_PARAMS.has(key);
+    const inLower = LOWER_FACE_PARAMS.has(key);
+    const inBody  = BODY_PARAMS.has(key);
+    if (ACC_PARAMS.has(key)) {
+      target[key] = val;
+    } else if ((isVad || regions.has('upper') || regions.has('lower')) && (inUpper || inLower)) {
+      // 面部: neutral + delta×k×ratio (VAD 用 _vadRatio 插值; 按钮测试 ratio=1 同样生效说话放大)
+      const neutralVal = EMOTIONS.neutral.set[key] ?? 0;
+      const delta = val - neutralVal;
+      const ratio = isVad ? _vadRatio : Math.min(1, intensity);
+      target[key] = neutralVal + delta * k * ratio;
+    } else if (isVad && inBody) {
+      target[key] = scaleVal(val, 1); // VAD: 肢体满
+    } else if ((regions.has('body') && inBody) || (!inUpper && !inLower && !inBody)) {
+      target[key] = scaleVal(val, intensity);
+    }
+  }
+
+  // 设定弹簧追踪目标 (各参数独立弹簧自动追踪)
+  _emitTarget = target;
+
+  // 恐惧: 启动眼珠抖动 (02:37: 主情绪已是 fear_v1 — fear/fear_v3 都触发颤抖)
+  if (name === 'fear_v1' || name === 'fear_v3') startFearShake();
+  else stopFearShake();
+
+  // 轻蔑: 启动眼睛随机切换 (闭眼/偷瞄) — 01:44 修复: name==='contempt' 永远不成立(按钮传变体名), 改 contempt_v1
+  console.log('[CONTEMPT] setEmotion name=' + name + ' → ' + (name === 'contempt_v1' ? '启动循环' : '停止循环'));  // 02:09 诊断
+  if (name === 'contempt_v1') startContemptCycle();
+  else stopContemptCycle();
+
+  // 变体循环: 情绪持续中自动随机切换变体
+  const baseEmotion = name.replace(/_(v\d+)?$/, '');
+  if (EMOTION_CYCLES[baseEmotion]) {
+    if (!_cycleCfg || _cycleCfg !== EMOTION_CYCLES[baseEmotion]) startEmotionCycle(baseEmotion);
+  } else {
+    stopEmotionCycle();
+  }
+
+  // 按钮高亮
+  document.querySelectorAll('#btnPanel button.em-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`#btnPanel button[data-emotion="${name}"]`).forEach(b => b.classList.add('active'));
+
+  log('[SET] ' + oldEmo + ' → ' + name + ' | src=' + (_setEmoSource||'?') + ' | ratio=' + (_vadRatio||'null') + ' | eye=' + (def.set.ParamEyeLOpen||0).toFixed(2) + '/' + (def.set.ParamEyeROpen||0).toFixed(2) + ' | ball=' + ((def.set.ParamEyeBallX||0)).toFixed(2) + '/' + ((def.set.ParamEyeBallY||0)).toFixed(2) + ' | cycle=' + (_cycleCfg ? Object.keys(EMOTION_CYCLES).find(k => EMOTION_CYCLES[k] === _cycleCfg) || '?' : 'null'));
+}
+
+// ── 重置 ──
+function resetEmotion() {
+  stopEmotionCycle();
+  _rampState = null;
+  currentEmotion = 'neutral';
+  currentIntensity = 0;
+  stopFearShake();
+  stopContemptCycle();
+
+  // 清空弹簧状态, 目标设为 neutral 的 0 值
+  _springs = {};
+  _emitTarget = {};
+  for (const key of Object.keys(EMOTIONS.neutral.set)) {
+    _emitTarget[key] = scaleVal(EMOTIONS.neutral.set[key], 0);
+  }
+
+  document.querySelectorAll('#btnPanel button').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector('#btnPanel button[data-emotion="neutral"]');
+  if (btn) btn.classList.add('active');
+
+  log('重置');
+}
+
+// ── 害怕颤抖: 眼珠抖动 + 细微身体颤抖 ──
+function startFearShake() {
+  if (_fearShake) return;
+  _fearShake = true;
+  _fearShakeTimer = setInterval(() => {
+    if (!_fearShake) { clearInterval(_fearShakeTimer); return; }
+    if (currentEmotion !== 'fear_v1' && currentEmotion !== 'fear_v3') { stopFearShake(); return; }  // 02:37: 变体兼容 (主情绪已改 fear_v1)
+    // 颤抖基准动态取 (02:37): fear_v1 用 AngleX 20/BodyY 16, fear_v3 用 AngleX 0/BodyY 20 — 不写死避免抖偏位
+    const baseDef = (EMOTIONS[currentEmotion] || EMOTIONS.fear_v1).set || {};
+    const baseX = baseDef.ParamAngleX || 0;
+    const baseY = baseDef.ParamBodyAngleY || 0;
+    // 眼珠不安抖动
+    _actionOverrides.ParamEyeBallX = (Math.random() - 0.5) * 0.6;
+    _actionOverrides.ParamEyeBallY = (Math.random() - 0.5) * 0.4;
+    // 细微身体颤抖 (微不可察但增加生动感)
+    _actionOverrides.ParamAngleX = (_actionOverrides.ParamAngleX ?? baseX) + (Math.random() - 0.5) * 0.6;
+    _actionOverrides.ParamBodyAngleY = (_actionOverrides.ParamBodyAngleY ?? baseY) + (Math.random() - 0.5) * 0.4;
+  }, Math.round(150 / TIME_SCALE));
+}
+function stopFearShake() {
+  _fearShake = false;
+  if (_fearShakeTimer) { clearInterval(_fearShakeTimer); _fearShakeTimer = null; }
+  delete _actionOverrides.ParamEyeBallX;
+  delete _actionOverrides.ParamEyeBallY;
+  delete _actionOverrides.ParamAngleX;
+  delete _actionOverrides.ParamBodyAngleY;
+}
+
+// ── 轻蔑眼睛随机切换 (偷瞄/翻白眼 循环, 不倒扣不停止) ──
+let _contemptCycle = false;
+let _contemptBlinkTimer = null;
+let _consecutivePeek = 0;
+let _mirrorSign = 1;  // 当前镜像方向 (+1 正常 / -1 镜像, 01:51 修复: 偷瞄眼珠跟随镜像)
+
+function startContemptCycle() {
+  if (_contemptCycle) return;
+  _contemptCycle = true;
+  _consecutivePeek = 0;
+  console.log('[CONTEMPT] startContemptCycle 启动 | 初始传: ' + (Math.random() < 0.5 ? 'peek' : 'roll'));  // 02:09 诊断
+  // 初始: Peek和Roll随机, 从不闭眼开始
+  applyContemptState(Math.random() < 0.5 ? 'peek' : 'roll');
+}
+
+function scheduleContemptBlink(callback) {
+  clearTimeout(_contemptBlinkTimer);
+  const delay = Math.round((700 + Math.random() * 800) / TIME_SCALE);
+  _contemptBlinkTimer = setTimeout(() => {
+    if (!_contemptCycle) return;
+    // 闭眼 0.12s (快速眨眼掩盖眼球转向)
+    _actionOverrides.ParamEyeLOpen = 0;
+    _actionOverrides.ParamEyeROpen = 0;
+    setTimeout(() => {
+      if (!_contemptCycle) return;
+      // 睁眼回到半眯0.6
+      _actionOverrides.ParamEyeLOpen = 0.60;
+      _actionOverrides.ParamEyeROpen = 0.60;
+      if (callback) callback();
+    }, Math.round(120 / TIME_SCALE));
+  }, delay);
+}
+
+function applyContemptState(state) {
+  if (!_contemptCycle) return;
+  clearTimeout(_contemptBlinkTimer);
+  console.log('[CONTEMPT] state=' + state + ' | EyeBallX目标=' + (state==='roll' ? (0.50*_mirrorSign).toFixed(2) : state==='peek' ? (-0.80*_mirrorSign).toFixed(2) : '保持翻白眼位') + ' | _consecutivePeek=' + _consecutivePeek + ' | _mirrorSign=' + _mirrorSign);  // 02:09 诊断
+
+  if (state === 'roll') {
+    // 翻白眼为主状态: 眼珠上翻+往头偏方向 (01:51: 乘 _mirrorSign 跟随镜像)
+    _actionOverrides.ParamEyeBallX = 0.50 * _mirrorSign;
+    _actionOverrides.ParamEyeBallY = 1.0;
+    _actionOverrides.ParamEyeLOpen = 0.60;
+    _actionOverrides.ParamEyeROpen = 0.60;
+    // 0.7~1.5s后随机触发: 偷瞄或继续翻白眼
+    const delay = Math.round((700 + Math.random() * 800) / TIME_SCALE);
+    console.log('[CONTEMPT] roll: 翻白眼持续 ' + (delay*TIME_SCALE).toFixed(0) + 'ms 后随机动作');  // 02:09 诊断
+    _contemptBlinkTimer = setTimeout(() => {
+      if (!_contemptCycle) return;
+      // 50%概率偷瞄一下, 50%再眨下眼继续翻
+      if (Math.random() < 0.5) {
+        console.log('[CONTEMPT] roll 内 50% → 偷瞄');  // 02:09 诊断
+        // 偷瞄: 转回看0.3s (01:51: 乘 _mirrorSign 跟随镜像)
+        _actionOverrides.ParamEyeBallX = -0.80 * _mirrorSign;
+        _actionOverrides.ParamEyeBallY = -0.30;
+        _actionOverrides.ParamEyeLOpen = 0.60;
+        _actionOverrides.ParamEyeROpen = 0.60;
+        _consecutivePeek++;
+        setTimeout(() => {
+          if (!_contemptCycle) return;
+          // 固定动作: 睁着眼转回翻白眼 (确保闭眼前在翻白眼) (01:51: 乘 _mirrorSign)
+          console.log('[CONTEMPT] 偷瞄0.3s后 → 转回翻白眼');  // 02:09 诊断
+          _actionOverrides.ParamEyeBallX = 0.50 * _mirrorSign;
+          _actionOverrides.ParamEyeBallY = 1.0;
+          setTimeout(() => {
+            if (!_contemptCycle) return;
+            // 0.2s后随机继续翻或闭眼 (此时已在翻白眼位置)
+            if (_consecutivePeek >= 2) {
+              console.log('[CONTEMPT] 连续偷瞄' + _consecutivePeek + '次 → 强制闭眼');  // 02:09 诊断
+              _actionOverrides.ParamEyeLOpen = 0;
+              _actionOverrides.ParamEyeROpen = 0;
+              applyContemptState('closed');
+            } else {
+              console.log('[CONTEMPT] 偷瞄1次<2 → 回 roll');  // 02:09 诊断
+              applyContemptState('roll');
+            }
+          }, Math.round(200 / TIME_SCALE));
+        }, Math.round(300 / TIME_SCALE));
+      } else {
+        // 不偷瞄: 眨个眼继续翻白眼
+        console.log('[CONTEMPT] roll 内 50% → 眨眼继续翻');  // 02:09 诊断
+        _actionOverrides.ParamEyeLOpen = 0;
+        _actionOverrides.ParamEyeROpen = 0;
+        setTimeout(() => {
+          if (!_contemptCycle) return;
+          _actionOverrides.ParamEyeLOpen = 0.60;
+          _actionOverrides.ParamEyeROpen = 0.60;
+          applyContemptState('roll');
+        }, Math.round(120 / TIME_SCALE));
+      }
+    }, delay);
+  } else {
+    // 闭眼主状态: 保持翻白眼位置闭眼, 持续约2.2s后切翻白眼
+    console.log('[CONTEMPT] 闭眼状态: 保持翻白眼位置闭眼 2.2s');  // 02:09 诊断
+    _actionOverrides.ParamEyeLOpen = 0;
+    _actionOverrides.ParamEyeROpen = 0;
+    // 眼珠保持翻白眼位置, 不复位 — 闭眼前不会看到正脸
+    _consecutivePeek = 0;
+    _contemptBlinkTimer = setTimeout(() => {
+      if (!_contemptCycle) return;
+      applyContemptState('roll');
+    }, Math.round(2200 / TIME_SCALE));
+  }
+}
+
+function stopContemptCycle() {
+  _contemptCycle = false;
+  clearTimeout(_contemptBlinkTimer);
+  console.log('[CONTEMPT] stopContemptCycle 停止 (被切走/换情绪)');  // 02:09 诊断
+  // 清除所有轻蔑眼覆盖, 恢复EMOTIONS.set值
+  delete _actionOverrides.ParamEyeLOpen;
+  delete _actionOverrides.ParamEyeROpen;
+  delete _actionOverrides.ParamEyeBallX;
+  delete _actionOverrides.ParamEyeBallY;
+}
+
+// ── 转头·独立轻蔑状态机 (跟上面一模一样, 无结尾无清除, 纯复制) ──
+let _emoteContemptCycle = false;
+let _emoteContemptTimer = null;
+let _emoteContemptPeek = 0;
+let _emoteContemptDir = 1;
+
+function _emoteStartContempt(dir) {
+  if (_emoteContemptCycle) return;
+  _emoteContemptCycle = true;
+  _emoteContemptDir = dir;
+  _emoteContemptPeek = 0;
+  _emoteContemptState(Math.random() < 0.5 ? 'peek' : 'roll');
+}
+
+function _emoteContemptBlink(callback) {
+  clearTimeout(_emoteContemptTimer);
+  const delay = Math.round((700 + Math.random() * 800) / TIME_SCALE);
+  _emoteContemptTimer = setTimeout(() => {
+    if (!_emoteContemptCycle) return;
+    _actionOverrides.ParamEyeLOpen = 0;
+    _actionOverrides.ParamEyeROpen = 0;
+    setTimeout(() => {
+      if (!_emoteContemptCycle) return;
+      _actionOverrides.ParamEyeLOpen = 0.60;
+      _actionOverrides.ParamEyeROpen = 0.60;
+      if (callback) callback();
+    }, Math.round(120 / TIME_SCALE));
+  }, delay);
+}
+
+function _emoteContemptState(state) {
+  if (!_emoteContemptCycle) return;
+  clearTimeout(_emoteContemptTimer);
+  const d = _emoteContemptDir;
+
+  if (state === 'roll') {
+    _actionOverrides.ParamEyeBallX = 0.50 * d;
+    _actionOverrides.ParamEyeBallY = 1.0;
+    _actionOverrides.ParamEyeLOpen = 0.60;
+    _actionOverrides.ParamEyeROpen = 0.60;
+    const delay = Math.round((700 + Math.random() * 800) / TIME_SCALE);
+    _emoteContemptTimer = setTimeout(() => {
+      if (!_emoteContemptCycle) return;
+      if (Math.random() < 0.5) {
+        _actionOverrides.ParamEyeBallX = -0.80 * d;
+        _actionOverrides.ParamEyeBallY = -0.30;
+        _actionOverrides.ParamEyeLOpen = 0.60;
+        _actionOverrides.ParamEyeROpen = 0.60;
+        _emoteContemptPeek++;
+        setTimeout(() => {
+          if (!_emoteContemptCycle) return;
+          _actionOverrides.ParamEyeBallX = 0.50 * d;
+          _actionOverrides.ParamEyeBallY = 1.0;
+          setTimeout(() => {
+            if (!_emoteContemptCycle) return;
+            if (_emoteContemptPeek >= 2) {
+              _actionOverrides.ParamEyeLOpen = 0;
+              _actionOverrides.ParamEyeROpen = 0;
+              _emoteContemptState('closed');
+            } else {
+              _emoteContemptState('roll');
+            }
+          }, Math.round(200 / TIME_SCALE));
+        }, Math.round(300 / TIME_SCALE));
+      } else {
+        _actionOverrides.ParamEyeLOpen = 0;
+        _actionOverrides.ParamEyeROpen = 0;
+        setTimeout(() => {
+          if (!_emoteContemptCycle) return;
+          _actionOverrides.ParamEyeLOpen = 0.60;
+          _actionOverrides.ParamEyeROpen = 0.60;
+          _emoteContemptState('roll');
+        }, Math.round(120 / TIME_SCALE));
+      }
+    }, delay);
+  } else {
+    _actionOverrides.ParamEyeLOpen = 0;
+    _actionOverrides.ParamEyeROpen = 0;
+    _emoteContemptPeek = 0;
+    _emoteContemptTimer = setTimeout(() => {
+      if (!_emoteContemptCycle) return;
+      _emoteContemptState('roll');
+    }, Math.round(2200 / TIME_SCALE));
+  }
+}
+
+// ── 唇同步 (Web Audio API 音频分析) ──
+let _audioCtx = null;
+let _lipAnalyser = null;
+let _lipData = null;
+let _lipSmoothVal = 0;  // 平滑后的嘴型值
+let _lipDebugLast = 0;  // 调试时间戳
+
+// ── 待机微动作调度 (说话时禁用, 不说话时 10-30s 随机触发) ──
+let _fidgetNextAt = 0;      // 下次触发时间
+let _fidgetActive = null;   // { name, startTime, duration }
+const FIDGET_POOL = [
+  { name:'headTiltR',  dur:3.0, params:{ ParamAngleZ: 3 } },
+  { name:'headTiltL',  dur:3.0, params:{ ParamAngleZ:-3 } },
+  { name:'headNod',    dur:2.4, params:{ ParamAngleY: 2 } },
+  { name:'lookUp',     dur:4.0, params:{ ParamEyeBallY: 0.15, ParamAngleY:-1 } },
+  { name:'lookDown',   dur:4.0, params:{ ParamEyeBallY:-0.1, ParamAngleY: 1 } },
+  { name:'shake',      dur:1.2, params:{ ParamAngleX: 2 } },
+  { name:'blushFlash', dur:3.6, params:{ ParamCheek: 0.15 } },
+];
+function _scheduleFidget(now) {
+  _fidgetNextAt = now + Math.round((5000 + Math.random() * 10000) / TIME_SCALE);  // 10-30s (半速)
+}
+function _triggerFidget(now) {
+  const f = FIDGET_POOL[Math.floor(Math.random() * FIDGET_POOL.length)];
+  _fidgetActive = { name: f.name, startTime: now, duration: f.dur * 1000, params: f.params };
+  _scheduleFidget(now + f.dur * 1000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 18组随机动作序列库 — IDLE_SEQ (独立开关, delta 叠加不覆盖情绪, 复用弹簧)
+// 设计依据 (2026-08-08 研究): 转头30°≈0.5s / 点头单次0.27s(九州大学,55%点1次)
+//   / 身体0.2-0.5Hz低频且永远比头慢 / 身体幅度×2(2D经验)不clamp
+// 每拍: {t:毫秒, params:{参数:目标值}} 目标=delta(叠加到 _renderParams, 不动 _emitTarget)
+//  head=头(AngleX/Y/Z), body=身(BodyAngleX/Y/Z), eye=眼珠, lids=眼睑,
+//  smile=笑眯, brow=眉, mouth=嘴, cheek=腮红
+// ═══════════════════════════════════════════════════════════════════════
+const IDLE_SEQ = [
+  { name:'吐槽摇头', beats:[  // "这都什么事啊" ≈2.6s
+    {t:500,  params:{ParamAngleX:16}},
+    {t:500,  params:{ParamAngleX:-16, ParamBodyAngleZ:8}},
+    {t:300,  hold:true},
+    {t:300,  params:{ParamAngleX:8}},
+    {t:600,  params:{ParamEyeBallY:0.8, ParamBodyAngleY:-12}},
+    {t:400,  reset:true},
+  ]},
+  { name:'俏皮歪头', beats:[  // "诶嘿~" ≈2.9s
+    {t:700,  params:{ParamAngleZ:14, ParamBodyAngleZ:-16}},
+    {t:300,  params:{ParamEyeBallX:-0.6}},
+    {t:700,  hold:true},
+    {t:500,  reset:true},
+  ]},
+  { name:'扫视全场', beats:[  // 讲段子看观众 ≈2.5s
+    {t:500,  params:{ParamAngleX:-20, ParamBodyAngleX:-16}},
+    {t:400,  hold:true},
+    {t:500,  params:{ParamAngleX:20, ParamBodyAngleX:16}},
+    {t:300,  hold:true},
+    {t:800,  reset:true},
+  ]},
+  { name:'强调前探', beats:[  // "重点来了" ≈2.2s
+    {t:600,  params:{ParamBodyAngleY:16, ParamAngleY:-8}},
+    {t:270,  params:{ParamAngleY:0}},
+    {t:250,  hold:true},
+    {t:400,  params:{ParamAngleY:-8}},
+    {t:700,  reset:true},
+  ]},
+  { name:'无奈耸肩', beats:[  // "我有什么办法" ≈2.7s
+    {t:300,  params:{ParamEyeBallY:-0.5}},
+    {t:500,  params:{ParamAngleY:10}},
+    {t:500,  hold:true},
+    {t:700,  params:{ParamAngleZ:10, ParamBodyAngleZ:-16}},
+    {t:500,  hold:true},
+    {t:500,  reset:true},
+  ]},
+  { name:'得意后仰', beats:[  // "就这？" ≈2.6s
+    {t:500,  params:{ParamAngleY:8}},
+    {t:700,  params:{ParamBodyAngleY:-20}},
+    {t:200,  params:{ParamEyeBallY:0.5, ParamBrowLY:0.3, ParamBrowRY:0.3}},
+    {t:800,  hold:true},
+    {t:700,  reset:true},
+  ]},
+  { name:'边说边晃', beats:[  // "就……那样吧" ≈2.8s
+    {t:600,  params:{ParamBodyAngleZ:24, ParamAngleZ:-8}},
+    {t:600,  params:{ParamBodyAngleZ:-24, ParamAngleZ:8}},
+    {t:600,  params:{ParamBodyAngleZ:24, ParamAngleZ:-8}},
+    {t:400,  params:{ParamBodyAngleZ:-16, ParamAngleZ:6}},
+    {t:600,  params:{ParamEyeBallX:0.4}},
+  ]},
+  { name:'疑问侧头', beats:[  // "嗯？你说啥" ≈2.7s
+    {t:600,  params:{ParamAngleZ:18, ParamBodyAngleZ:-16}},
+    {t:200,  params:{ParamEyeLOpen:0.85, ParamEyeROpen:0.85, ParamEyeBallX:-0.5}},
+    {t:800,  hold:true},
+    {t:300,  params:{ParamAngleZ:20}},
+    {t:800,  reset:true},
+  ]},
+  { name:'思考', beats:[  // "让我想想" ≈2.4s
+    {t:300,  params:{ParamEyeBallY:0.6}},
+    {t:500,  params:{ParamAngleZ:8}},
+    {t:800,  hold:true},
+    {t:200,  params:{ParamEyeLOpen:0.8, ParamEyeROpen:0.8}},
+    {t:600,  reset:true},
+  ]},
+  { name:'惊吓', beats:[  // "卧槽！" ≈2.2s
+    {t:150,  params:{ParamAngleY:10, ParamEyeLOpen:1, ParamEyeROpen:1}},
+    {t:700,  hold:true},
+    {t:700,  params:{ParamBodyAngleY:-10}},
+    {t:700,  reset:true},
+  ]},
+  { name:'害羞', beats:[  // "人家不好意思啦" ≈2.4s
+    {t:300,  params:{ParamEyeBallY:-0.7, ParamEyeBallX:-0.4}},
+    {t:400,  params:{ParamAngleY:8}},
+    {t:300,  params:{ParamCheek:0.3}},
+    {t:500,  hold:true},
+    {t:400,  params:{ParamAngleY:4}},
+    {t:500,  reset:true},
+  ]},
+  { name:'打哈欠', beats:[  // "困了…" ≈2.4s
+    {t:600,  params:{ParamMouthOpenY:1, ParamAngleY:10, ParamEyeLOpen:0.6, ParamEyeROpen:0.6}},
+    {t:600,  hold:true},
+    {t:500,  params:{ParamMouthOpenY:0}},
+    {t:150,  params:{ParamEyeLOpen:0, ParamEyeROpen:0}},
+    {t:600,  reset:true},
+  ]},
+  { name:'假装生气', beats:[  // "哼！" ≈2.2s
+    {t:350,  params:{ParamAngleX:-25, ParamBrowLY:-0.3, ParamBrowRY:-0.3}},
+    {t:750,  hold:true},
+    {t:500,  params:{ParamAngleX:-12}},
+    {t:600,  reset:true},
+  ]},
+  { name:'大笑', beats:[  // "哈哈哈哈" ≈2.8s
+    {t:500,  params:{ParamAngleY:14, ParamEyeLSmile:0.8, ParamEyeRSmile:0.8, ParamEyeLOpen:0.6, ParamEyeROpen:0.6}},
+    {t:700,  params:{ParamBodyAngleY:-16}},
+    {t:700,  hold:true},
+    {t:900,  reset:true},
+  ]},
+  { name:'僵住', beats:[  // "？？？" ≈1.8s
+    {t:100,  reset:true},
+    {t:800,  hold:true},
+    {t:400,  params:{ParamEyeBallX:0.2}},
+    {t:500,  reset:true},
+  ]},
+  { name:'探头', beats:[  // "让我看看" ≈2.2s
+    {t:400,  params:{ParamAngleY:-8, ParamEyeLOpen:0.8, ParamEyeROpen:0.8}},
+    {t:400,  params:{ParamAngleZ:10}},
+    {t:600,  hold:true},
+    {t:800,  reset:true},
+  ]},
+  { name:'歪头杀', beats:[  // "我厉害吧~" ≈2.5s
+    {t:500,  params:{ParamAngleZ:16, ParamEyeLSmile:0.7, ParamEyeRSmile:0.7}},
+    {t:200,  params:{ParamCheek:0.2}},
+    {t:300,  params:{ParamEyeBallX:-0.5}},
+    {t:800,  hold:true},
+    {t:700,  reset:true},
+  ]},
+  { name:'无语', beats:[  // "…行吧" ≈2.2s
+    {t:300,  params:{ParamAngleZ:6}},
+    {t:800,  hold:true},
+    {t:200,  params:{ParamAngleX:5}},
+    {t:200,  params:{ParamAngleX:-5}},
+    {t:700,  reset:true},
+  ]},
+];
+
+// ── 18组随机动作系统 (独立开关, delta平滑叠加, 3-8s随机触发) ──
+let _idleSeqOn = true;    // 默认开 (拉姆测试满意 00:25)
+let _fidgetOn = true;     // fidget 独立开关 (默认开, 保持原行为)
+let _idleAnim = null;     // { seq, bi, phaseStart }
+let _idleCur = {};        // { param: 目标delta值 } 一拍的目标
+let _idleSprings = {};    // { param: {pos,vel} } delta 二阶弹簧状态 (复用 PARAM_SPRINGS k/c)
+let _idleNextAt = 0;      // 下次触发时间
+let _idleKeys = [];       // 序列用到的参数 (回中/关闭时平滑归零)
+let _idleLastT = 0;       // idle 弹簧上一帧时间
+
+function toggleFidget() {
+  _fidgetOn = !_fidgetOn;
+  const b = $('btnFidget');
+  if (b) {
+    b.textContent = '✨ 微动作 ' + (_fidgetOn ? '开' : '关');
+    b.style.borderColor = _fidgetOn ? '#5abe6e' : '#555';
+    b.style.color = _fidgetOn ? '#5abe6e' : '#888';
+  }
+  if (!_fidgetOn) _fidgetActive = null;
+  log('[微动作] ' + (_fidgetOn ? '开' : '关'));
+}
+
+function toggleIdleSeq() {
+  _idleSeqOn = !_idleSeqOn;
+  const b = $('btnIdleSeq');
+  if (b) {
+    b.textContent = '🎭 待机动作 ' + (_idleSeqOn ? '开' : '关');
+    b.style.borderColor = _idleSeqOn ? '#5abe6e' : '#555';
+    b.style.color = _idleSeqOn ? '#5abe6e' : '#888';
+  }
+  if (!_idleSeqOn) {  // 关: 停序列, 已有 delta 平滑归零
+    _idleAnim = null;
+    _idleKeys.forEach(k => _idleCur[k] = 0);
+    _idleKeys = [];
+  }
+  log('[待机动作] ' + (_idleSeqOn ? '开' : '关'));
+}
+
+function _scheduleIdleSeq(now) {
+  _idleNextAt = now + Math.round((3000 + Math.random() * 5000) / TIME_SCALE);  // 3-8s
+}
+
+function _triggerIdleSeq(now) {
+  const seq = IDLE_SEQ[Math.floor(Math.random() * IDLE_SEQ.length)];
+  _idleAnim = { seq: seq, bi: 0, phaseStart: now };
+  _idleKeys = [];
+  log('[待机动作] 触发: ' + seq.name);
+}
+
+// ── 倾听加算层 (在最终渲染前叠加, 不影响底层情绪) ──
+let _listenAdd = {};
+
+// ── 说话眼神 (18:52): 眨眼时 70%盯前方(VOR反向补偿+扫视漂移) / 30%随头(不修正) ──
+// EYE_VOR_K 标定来源: 轻蔑v1 扭头25°(ParamAngleX:25) 偷瞄时眼珠反向-0.80 → 0.80/25=0.032 (19:28 用户提示)
+const EYE_VOR_K = 0.032;  // 头角度(度)→眼珠参数: 头25°↔眼珠0.80 反向
+let _gazeMode = 'loose';  // 'track'=盯前方(补偿) / 'loose'=随头(不修正)
+let _gazeDriftX = 0, _gazeDriftY = 0, _gazeDriftT = 0;  // 扫视漂移目标/更新时间
+
+// ── 发声/静音状态机 (20:01 用户定稿): 倾听(默认)→语音→首句; 静音0.2s预触发"下一句"; 0.6s无声音→打断回基线 ──
+const GAP_TRIGGER = 200;   // 静音200ms: 预触发"下一句"动作 (先发制人, 避免动作超过幅度)
+const GAP_SENTENCE = 600;  // 预触发后400ms仍无声音(总静音600ms): 打断回基线切倾听
+const SILENCE_RMS = 0.01;  // 静音判定阈值: 实测真停顿底噪0.000~0.001、弱音段0.015+、取0.01 (20:12 用户确认)
+let _vocalizing = false;   // 发声状态 (有音量=true)
+let _silenceStart = null;  // 静音开始时间戳
+let _gapFired = false;     // 已预触发"下一句"
+let _gapRolledBack = false;// 已打断回基线
+let _swingReturn = false;  // 说完回正中 (弹簧继续积分回0)
+
+// ── 一次性表情动作系统 (20:37): 6个表情(认真/wink/开心/spin/转头/担心), 触发序列动作无循环 ──
+// 表演依据: 认真=眼睑压低嘴收紧(克制比夸张更像认真); wink=单眼闭合+嘴角上扬鬼脸(icourse163);
+// 开心=咧嘴+眯眼+眉扬+仰头(clip studio大笑); spin=摇头晃脑模拟转圈(动画夸张);
+// 转头=头转向一侧保持再回; 担心=内眉上扬八字+嘴角下拉+低头+眼神下垂(clip studio)
+// 表情动作 = 阶段序列 (21:51 重构): 每阶段 = 目标值(params) + 弹簧系数(kc) + 时长(dur)
+// 目标写 _emitTarget → 帧循环第1步弹簧系统统一过渡 (全局同一机制, 不自建插值)
+// kc 可选: 覆盖该参数弹簧系数 (k大=快; ts≈3/√k 到位; c=2√k 临界无过冲); 省略=用 PARAM_SPRINGS 默认(面部→指数平滑)
+let _emoteAnim = null;      // { phases, pi, phaseStart }
+let _springOverride = null; // 表情阶段弹簧系数覆盖: { param: {k,c} } (帧循环第1步读取)
+let _emoteBase = {};        // 表情启动时的倾听目标快照 (结束恢复用)
+let _emoteKeys = [];        // 本次表情用到的参数列表
+
+function _emoteRestore() {  // 结束: 恢复倾听动画目标, 弹簧从表情位置平滑回基础
+  if (!_emitTarget) return;
+  for (const k of _emoteKeys) {
+    if (k in _emoteBase) _emitTarget[k] = _emoteBase[k];
+    else delete _emitTarget[k];
+  }
+  _emoteKeys = [];
+}
+
+// 表情动作 = 阶段序列 (21:10 重做): 每阶段 lerp 平滑过渡到目标, 结束清空回表情基础
+// wink: 先歪头+身体侧倾 → 歪最大时眨低侧眼+嘴角 → 睁眼 → 回正 (眨眼的时机=身体弯曲最大时, 眨的是头低的那一侧)
+const EMOTE_PHASES = {
+  '认真': [
+    // A 预备·视线聚焦 (0~0.2s): 眼珠快收敛正中(k90≈0.32s), 身体微前倾(k35≈0.5s) — "注意力被抓住"
+    // 方向实测: BodyAngleY + = 前倾 (骨骼测试按钮 253 行: BodyY+15=前倾); AngleY - = 低头 (248 行)
+    // 肢体幅度×3 (22:43 用户定): 2D 上肢体动作不明显, 需放大3倍才看得出 (面部保持×2标准)
+    { params: { ParamEyeBallX: 0, ParamEyeBallY: 0, ParamBodyAngleY: 3 }, kc: { ParamEyeBallX: { k: 90, c: 19 }, ParamEyeBallY: { k: 90, c: 19 }, ParamBodyAngleY: { k: 35, c: 12 } }, dur: 200 },
+    // B 眉毛先压 (0.2~0.55s): 眉毛慢压(k45≈0.45s, 第一动点), 平直不内斜
+    { params: { ParamBrowLY: -0.2, ParamBrowRY: -0.2 }, kc: { ParamBrowLY: { k: 45, c: 13 }, ParamBrowRY: { k: 45, c: 13 } }, dur: 350 },
+    // C 眼睑眯+嘴收紧 (0.55~0.95s, 落后眉毛): 上眼皮压低变锐利, 嘴闭合平直
+    { params: { ParamEyeLOpen: 0.6, ParamEyeROpen: 0.6, ParamMouthForm: 0, ParamMouthOpenY: 0 }, kc: { ParamEyeLOpen: { k: 45, c: 13 }, ParamEyeROpen: { k: 45, c: 13 }, ParamMouthForm: { k: 45, c: 13 }, ParamMouthOpenY: { k: 45, c: 13 } }, dur: 400 },
+    // D 头沉+身体前倾 (0.95~1.35s): 头低(AngleY-9, ×3), 身体前倾(BodyAngleY+6, ×3)
+    { params: { ParamAngleY: -9, ParamBodyAngleY: 6 }, kc: { ParamAngleY: { k: 35, c: 12 }, ParamBodyAngleY: { k: 35, c: 12 } }, dur: 400 },
+    // E 保持·克制 (1.35~2.85s): 目标不变, 弹簧静止 — 克制比夸张更像认真
+    { params: {}, dur: 1500 },
+    // F 松开 (2.85~3.45s): null=回倾听基础值(避免1.0瞪眼bug, 22:45) — 眼睑先回 → 其他参数回 → 交还表情基础
+    { params: { ParamEyeLOpen: null, ParamEyeROpen: null }, kc: { ParamEyeLOpen: { k: 70, c: 17 }, ParamEyeROpen: { k: 70, c: 17 } }, dur: 250 },
+    { params: { ParamBrowLY: null, ParamBrowRY: null, ParamAngleY: null, ParamBodyAngleY: null, ParamMouthForm: null, ParamMouthOpenY: null, ParamEyeBallX: null, ParamEyeBallY: null }, kc: { ParamBrowLY: { k: 45, c: 13 }, ParamBrowRY: { k: 45, c: 13 }, ParamAngleY: { k: 35, c: 12 }, ParamBodyAngleY: { k: 35, c: 12 }, ParamMouthForm: { k: 45, c: 13 }, ParamMouthOpenY: { k: 45, c: 13 }, ParamEyeBallX: { k: 90, c: 19 }, ParamEyeBallY: { k: 90, c: 19 } }, dur: 350 },
+  ],
+  // wink: 4 固定变体 (A 同向/B 反向 × 左右) 在 WINK_VARIANTS + _winkPhases(dir,same) 生成
+  // 开心: 左右镜像 × 保持2s内随机肢体镜像, 见 _happyPhases(dir)
+  'spin': [
+    { params: { ParamAngleX: 12, ParamAngleZ: 6, ParamBodyAngleX: 3 }, dur: 250 },
+    { params: { ParamAngleX: -12, ParamAngleZ: -6, ParamBodyAngleX: -3 }, dur: 250 },
+    { params: { ParamAngleX: 10, ParamAngleZ: 5, ParamBodyAngleX: 2 }, dur: 250 },
+    { params: { ParamAngleX: -10, ParamAngleZ: -5, ParamBodyAngleX: -2 }, dur: 250 },
+    { params: { ParamAngleX: 0, ParamAngleZ: 0, ParamBodyAngleX: 0 }, dur: 450 },
+  ],
+  '转头': [
+    { params: { ParamEyeBallX: 0.5 }, dur: 300 },      // 眼珠先看向目标方向
+    { params: { ParamAngleX: 16, ParamBodyAngleX: 4, ParamAngleY: 2 }, dur: 450 },  // 头转过去 + 身体跟随 + 微仰
+    { params: {}, dur: 700 },                          // 保持看那边
+    { params: { ParamAngleX: 0, ParamBodyAngleX: 0, ParamAngleY: 0, ParamEyeBallX: 0 }, dur: 450 },  // 回正
+  ],
+  '担心': [
+    { params: { ParamAngleY: -10, ParamBodyAngleY: -4, ParamBrowLY: 0.4, ParamBrowRY: 0.4, ParamBrowLForm: -0.4, ParamBrowRForm: -0.4, ParamMouthForm: -0.5, ParamEyeBallY: -0.4 }, dur: 500 },  // 低头+身体前缩+八字眉+嘴角下拉+眼神下垂
+    { params: {}, dur: 800 },                          // 保持
+    { params: { ParamAngleY: 0, ParamBodyAngleY: 0, ParamBrowLY: 0, ParamBrowRY: 0, ParamBrowLForm: 0, ParamBrowRForm: 0, ParamMouthForm: 0, ParamEyeBallY: 0 }, dur: 500 },  // 回正
+  ],
+};
+
+// ── wink 变体 (23:30): 4 固定变体 = A 头身同向 / B 头身反向 × 左右镜像
+// 表演: 先歪头带身体 → 身体弯曲最大、歪最厉害时眨"头低的那侧"眼 + 嘴角上扬鬼脸 → 睁眼保持 → 回正
+// 方向: AngleZ +15=左歪(249行) / BodyAngleZ -15=左倾(256行) → 同向=A 参数反号; 眨低侧眼(左歪眨左眼)
+const WINK_VARIANTS = {
+  'wink_AL': [ 1, true ],   // A 同向·左歪 (头左歪+身左倾, 眨左眼)
+  'wink_AR': [ -1, true ],  // A 同向·右歪 (头右歪+身右倾, 眨右眼)
+  'wink_BL': [ 1, false ],  // B 反向·左歪 (头左歪+身右倾对抗, 眨左眼)
+  'wink_BR': [ -1, false ], // B 反向·右歪 (头右歪+身左倾对抗, 眨右眼)
+};
+function _winkPhases(dir, same) {
+  // 00:27 用户实测确认: 模型 ParamBodyAngleZ 实际方向与按钮标注相反 (标注 BodyZ+15=右倾, 实际+15=左倾)
+  // → 同向(身随头)参数同号 bodyZ=dir; 反向(身对抗头) bodyZ=-dir (原公式反了, 导致同左/反左互换)
+  const bodyZ = same ? dir : -dir;
+  const closeEye = dir > 0 ? 'ParamEyeLOpen' : 'ParamEyeROpen';   // 头低的那侧眨眼
+  const openEye  = dir > 0 ? 'ParamEyeROpen' : 'ParamEyeLOpen';
+  // 00:23 用户定稿节奏 (UCL 论文 + wordln wink 分解 + 动画 anticipation/overshoot):
+  // P1 慢蓄力歪头 → P2 顶点快闭眼(峰值速度+overshoot+停顿) → P3 头快回弹+睁眼(比闭眼慢) → P4 慢衰减回正
+  return [
+    // P1 预备·持续歪头 (0~0.5s): 慢蓄力(anticipation) — 头持续歪 k35 从容, 肢体先动
+    // 00:30 用户定: 身体变化幅度×2 (2D 角色肢体要大) 4→8
+    { params: { ParamAngleZ: 30 * dir, ParamBodyAngleZ: 8 * bodyZ, ParamAngleY: -3 },
+      kc: { ParamAngleZ: { k: 35, c: 12 }, ParamBodyAngleZ: { k: 35, c: 12 }, ParamAngleY: { k: 45, c: 13 } }, dur: 500 },
+    // P2a 闭上·压到极限 (0.5~0.7s): 眨眼快闭(k300)冲过-0.3 + 身体压到弯曲极大值(36) + 用力笑(MouthForm 1.7, 01:07 用户定: 故意用力笑的表情, happy满2.5) — "闭上"
+    // 00:30 用户定: 身体变化幅度×2 5→10
+    { params: { ParamAngleZ: 36 * dir, ParamBodyAngleZ: 10 * bodyZ, [closeEye]: -0.3, ParamMouthForm: 1.7 },
+      kc: { ParamAngleZ: { k: 45, c: 13 }, ParamBodyAngleZ: { k: 45, c: 13 }, [closeEye]: { k: 300, c: 35 }, ParamMouthForm: { k: 45, c: 13 } }, dur: 200 },
+    // P2b 保持闭眼·前80% (0.7~0.956s): 保持闭眼 + 身体保持极限(36) — 压缩持续, 保持闭眼总 320ms 的前 80%
+    { params: { ParamAngleZ: 36 * dir, ParamBodyAngleZ: 10 * bodyZ },
+      kc: { ParamAngleZ: { k: 45, c: 13 }, ParamBodyAngleZ: { k: 45, c: 13 } }, dur: 256 },
+    // P2c 保持闭眼·后20%·回弹启动 (0.956~1.02s): 保持闭眼(眼仍闭) + 身体开始回弹(目标0,k90) — 极值点=保持闭眼80%, 眼皮砸到底肢体开始弹
+    { params: { ParamAngleZ: 0, ParamBodyAngleZ: 0 },
+      kc: { ParamAngleZ: { k: 90, c: 19 }, ParamBodyAngleZ: { k: 90, c: 19 } }, dur: 64 },
+    // P3 睁眼·回弹 (1.02~1.62s): 睁眼(k80 比闭眼慢=Mueller生理) + 身体继续回弹 — 回弹=压缩130% (600/456≈131%)
+    { params: { ParamAngleZ: 0, ParamBodyAngleZ: 0, [closeEye]: null },
+      kc: { ParamAngleZ: { k: 90, c: 19 }, ParamBodyAngleZ: { k: 90, c: 19 }, [closeEye]: { k: 80, c: 18 } }, dur: 600 },
+    // P4 慢回正 (1.62~2.02s): 头慢衰减(k35)回0 + 嘴角收回 + 眼继续睁完
+    // 00:34 修复: P4 不设 openEye 的 kc — openEye 没动过, 设弹簧会切到脏 _springs.pos 导致对侧眼跳
+    { params: { ParamAngleZ: 0, ParamBodyAngleZ: 0, ParamAngleY: null, [openEye]: null, ParamMouthForm: null },
+      kc: { ParamAngleZ: { k: 35, c: 12 }, ParamBodyAngleZ: { k: 35, c: 12 }, ParamAngleY: { k: 45, c: 13 }, ParamMouthForm: { k: 45, c: 13 } }, dur: 400 },
+  ];
+}
+
+// ── 开心变体 (01:28): 左右镜像 × 保持2s内随机肢体镜像 (每0.5s 50%概率镜像)
+// 幅度 = neutral 基线 + delta×0.7 (用户定, delta=happy_v1标准值-基线偏离量; 01:10 版直接复制标准值=满强度太夸张)
+// 面部保持微笑不镜像, 仅肢体(歪头AngleZ/身体BodyAngleZ)随 dir 翻转
+const HAPPY_DIRS = { '开心左': 1, '开心右': -1 };
+function _happyPhases(dir) {
+  // delta×0.7 目标值 (happy_v1: AngleZ13/BodyY-5/BodyZ-8/EyeL0.85/Brow-0.5/Mouth2.5/Open0.5/Cheek1.25 ×0.7 + 基线)
+  const smile = {   // 面部 (不镜像)
+    ParamEyeLOpen: 0.82, ParamEyeROpen: 0.82,
+    ParamEyeLSmile: 0.49, ParamEyeRSmile: 0.49,
+    ParamBrowLY: -0.35, ParamBrowRY: -0.35,
+    ParamMouthForm: 1.75, ParamMouthOpenY: 0.35,
+    ParamCheek: 0.875,
+  };
+  const limb = (d) => ({ ParamAngleZ: 9.1 * d, ParamBodyAngleY: -3.5, ParamBodyAngleZ: -5.6 * d });  // 肢体 (随方向)
+  const K45 = (keys) => Object.fromEntries(keys.map(k => [k, { k: 45, c: 13 }]));
+  const allKeys = Object.keys({ ...smile, ...limb(1) });
+  const phases = [
+    // P1 进入 (0~0.5s): 全套目标 delta×0.7
+    { params: { ...smile, ...limb(dir) }, kc: K45(allKeys), dur: 500 },
+  ];
+  // P2 保持 2s = 4段×0.5s, 每段 50% 概率镜像肢体 (歪头+9.1↔-9.1, 身体跟随) — "允许触发随机肢体镜像"
+  let curDir = dir;
+  for (let i = 0; i < 4; i++) {
+    if (i > 0 && Math.random() < 0.5) curDir = -curDir;
+    phases.push({ params: { ...smile, ...limb(curDir) }, kc: K45(allKeys), dur: 500 });
+  }
+  // P3 回正 (0.5s): 全部 null 回基线 (delta=0)
+  phases.push({
+    params: Object.fromEntries(allKeys.map(k => [k, null])),
+    kc: K45(allKeys), dur: 500,
+  });
+  return phases;
+}
+
+// ── 轻蔑v1 满力度 (分左右) — 姿态走弹簧 + 眼球走override (跟状态机一致) ──
+const CONTEMPT_DIRS = { '转头左': 1, '转头右': -1 };
+function _contemptPhases(dir) {
+  const face = {
+    ParamAngleY: 15, ParamAngleX: 25 * dir, ParamAngleZ: 0,
+    ParamBodyAngleY: -16, ParamBodyAngleX: 0, ParamBodyAngleZ: 0,
+    ParamEyeLOpen: 0.60, ParamEyeROpen: 0.60,
+    ParamEyeLSmile: 0, ParamEyeRSmile: 0,
+    ParamBrowLY: 0.50, ParamBrowRY: 0.50,
+    ParamBrowLX: 0, ParamBrowRX: 0,
+    ParamBrowLAngle: 0, ParamBrowRAngle: 0,
+    ParamBrowLForm: 0, ParamBrowRForm: 0,
+    ParamMouthForm: 1.00, ParamMouthOpenY: 0,
+    ParamCheek: 1.50,
+    Param10: 0, Param11: 0, Param12: 0, Param23: 0, Param18: 1,
+  };
+  const K45 = (keys) => Object.fromEntries(keys.map(k => [k, { k: 45, c: 13 }]));
+  const O = (bx, by, eye) => ({ ParamEyeBallX: bx, ParamEyeBallY: by, ParamEyeLOpen: eye, ParamEyeROpen: eye });
+  const allKeys = Object.keys(face);
+  return [
+    // P1 进入姿态 (500ms): 偷瞄看人
+    { params: { ...face }, override: O(-0.80*dir, 0, 0.60), kc: K45(allKeys), dur: 500 },
+    // P2 roll 翻白眼 (1.2s)
+    { params: {}, override: O(0.50*dir, 1.0, 0.60), kc: null, dur: 1200 },
+    // P3 blink 闭眼掩盖转向 (0.12s) → 下段偷瞄
+    { params: {}, override: O(0.50*dir, 1.0, 0), kc: null, dur: 120 },
+    // P4 peek 偷瞄 (0.3s): 睁眼在偷瞄位
+    { params: {}, override: O(-0.80*dir, -0.30, 0.60), kc: null, dur: 300 },
+    // P5 blink 闭眼掩盖转回 (0.12s) → 下段翻白眼
+    { params: {}, override: O(-0.80*dir, -0.30, 0), kc: null, dur: 120 },
+    // P6 roll 翻白眼 (1s)
+    { params: {}, override: O(0.50*dir, 1.0, 0.60), kc: null, dur: 1000 },
+    // P7 blink (0.12s) → 第二次偷瞄
+    { params: {}, override: O(0.50*dir, 1.0, 0), kc: null, dur: 120 },
+    // P8 peek 第二次 (0.3s), 连续2次 → 触发闭眼
+    { params: {}, override: O(-0.80*dir, -0.30, 0.60), kc: null, dur: 300 },
+    // P9 blink 转回翻白眼位 (0.12s)
+    { params: {}, override: O(-0.80*dir, -0.30, 0), kc: null, dur: 120 },
+    // P10 翻白眼位 (0.2s) → 强制闭眼
+    { params: {}, override: O(0.50*dir, 1.0, 0.60), kc: null, dur: 200 },
+    // P11 close 闭眼 (1.5s)
+    { params: {}, override: O(0.50*dir, 1.0, 0), kc: null, dur: 1500 },
+    // P12 回正: 清 override + 姿态回基线
+    { params: Object.fromEntries(allKeys.map(k => [k, null])), override: { ParamEyeBallX: null, ParamEyeBallY: null, ParamEyeLOpen: null, ParamEyeROpen: null }, kc: K45(allKeys), dur: 500 },
+  ];
+}
+
+// ── 担心v1 delta×0.7 (分左右) ──
+const WORRIED_DIRS = { '担心左': 1, '担心右': -1 };
+function _worriedPhases(dir) {
+  const face = {
+    ParamAngleY: -7.0, ParamBodyAngleY: -8.4,
+    ParamEyeLOpen: 0.995, ParamEyeROpen: 0.995,
+    ParamBrowLY: 1.12, ParamBrowRY: 1.12,
+    ParamBrowLAngle: -1.40, ParamBrowRAngle: -1.40,
+    ParamMouthForm: -0.70, ParamMouthOpenY: 0.21,
+  };
+  const limb = (d) => ({ ParamAngleX: 5.6 * d });
+  const K45 = (keys) => Object.fromEntries(keys.map(k => [k, { k: 45, c: 13 }]));
+  const allKeys = Object.keys({ ...face, ...limb(1) });
+  const phases = [
+    { params: { ...face, ...limb(dir) }, kc: K45(allKeys), dur: 500 },
+  ];
+  let curDir = dir;
+  for (let i = 0; i < 4; i++) {
+    if (i > 0 && Math.random() < 0.5) curDir = -curDir;
+    phases.push({ params: { ...face, ...limb(curDir) }, kc: K45(allKeys), dur: 1000 });
+  }
+  phases.push({ params: Object.fromEntries(allKeys.map(k => [k, null])), kc: K45(allKeys), dur: 500 });
+  return phases;
+}
+
+// ── spin (01:33): 整个 canvas 模型转一圈, 不碰任何肢体/表情参数 ──
+// 顺时针(右版本 +360°) / 逆时针(左版本 -360°); rAF 平滑转 1.2s, 结束后归 0
+const SPIN_DIRS = { 'spin右': 1, 'spin左': -1 };
+const SPIN_DUR = 1200;
+let _spinRaf = null;
+let _spinRot = 0;   // 当前累计旋转角度 (目标=±360 的整数倍)
+
+function playSpin(dir) {
+  const canvas = $('l2dCanvas');
+  if (!canvas) return;
+  if (_spinRaf) cancelAnimationFrame(_spinRaf);
+  const startRot = _spinRot;
+  const endRot = startRot + 360 * dir;
+  const t0 = performance.now();
+  const step = (now) => {
+    const t = Math.min((now - t0) / SPIN_DUR, 1);
+    const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;  // easeInOutCubic 平滑起止
+    _spinRot = startRot + (endRot - startRot) * ease;
+    canvas.style.transform = 'rotate(' + _spinRot + 'deg)';
+    if (t < 1) { _spinRaf = requestAnimationFrame(step); }
+    else { _spinRaf = null; canvas.style.transform = 'rotate(0deg)'; _spinRot = 0; log('spin 完成'); }
+  };
+  _spinRaf = requestAnimationFrame(step);
+  log('表情: ' + (dir > 0 ? 'spin右' : 'spin左'));
+}
+
+function playEmote(name) {   // 触发表情动作序列 (按钮/以后接AI表情指令)
+  // 打断正在跑的 X2 轻蔑状态机
+  if (_emoteContemptCycle) {
+    _emoteContemptCycle = false;
+    clearTimeout(_emoteContemptTimer);
+    delete _actionOverrides.ParamEyeLOpen;
+    delete _actionOverrides.ParamEyeROpen;
+    delete _actionOverrides.ParamEyeBallX;
+    delete _actionOverrides.ParamEyeBallY;
+  }
+  // ── spin (01:33): 整个 canvas 模型转一圈, 不动任何肢体/表情 ──
+  if (SPIN_DIRS[name]) { playSpin(SPIN_DIRS[name]); return; }
+  // ── 转头: 独立轻蔑状态机 X2 (不走 phases, 不走循环) ──
+  if (CONTEMPT_DIRS[name]) {
+    _emotePrevVad = _vadControl; _emotePrevBlink = _blinkControl; _emotePrevCycle = _cyclePaused;
+    _vadControl = false; _blinkControl = false; _cyclePaused = true;
+    // 姿态: contempt_v1 全套写 _emitTarget 弹簧进入
+    if (!_emitTarget) _emitTarget = {};
+    const cset = EMOTIONS.contempt_v1.set;
+    for (const k of Object.keys(cset)) _emitTarget[k] = (k === 'ParamAngleX') ? cset[k] * CONTEMPT_DIRS[name] : cset[k];
+    _emoteStartContempt(CONTEMPT_DIRS[name]);
+    // 10s 后停止
+    setTimeout(() => {
+      _emoteContemptCycle = false;
+      clearTimeout(_emoteContemptTimer);
+      delete _actionOverrides.ParamEyeLOpen;
+      delete _actionOverrides.ParamEyeROpen;
+      delete _actionOverrides.ParamEyeBallX;
+      delete _actionOverrides.ParamEyeBallY;
+      // 姿态回中立
+      for (const k of Object.keys(EMOTIONS.neutral.set)) _emitTarget[k] = EMOTIONS.neutral.set[k];
+    }, 6000);
+    log('表情: ' + name + ' (独立轻蔑 6s)');
+    return;
+  }
+  _emotePrevVad = _vadControl; _emotePrevBlink = _blinkControl; _emotePrevCycle = _cyclePaused;
+  _vadControl = false;   // 表情动作期间关 VAD 控制, 不被打断
+  _blinkControl = false;  // 表情动作期间关眨眼, 不干扰
+  _cyclePaused = true;    // 暂停循环 timer, 不抢控制权
+  _emoteAnim = null; _springOverride = null;
+  // 00:07/00:12: 快速连点时上次弹簧 pos 残留 → 不用硬设(瞬移,违反物理), 改"归位阶段"弹簧走回基线再开始
+  const prevKeys = _emoteKeys.slice();
+  if (prevKeys.length) _emoteRestore();
+  let phases = EMOTE_PHASES[name];
+  if (WINK_VARIANTS[name]) {
+    const wv = WINK_VARIANTS[name];
+    phases = _winkPhases(...wv);   // 4 固定 wink 变体 (A/B × 左右)
+    _blinkPauseUntil = performance.now() + 11500;  // wink 播放(1.5s) + 之后10s 暂停随机眨眼, 避免干扰 (23:28)
+    delete _listenAdd.eye;   // 00:04 修复: 立即睁眼, 消除正在进行的随机闭眼(对侧眼跳)
+    // 临时诊断 (23:48): 变体参数 + 快照前的 _emitTarget 残留
+    console.log('[EMOTE] ' + name + ' dir=' + wv[0] + ' same=' + wv[1]
+      + ' | 目标 AngleZ=' + (15 * wv[0]).toFixed(0) + ' BodyAngleZ=' + (4 * (wv[1] ? -wv[0] : wv[0])).toFixed(0)
+      + ' 眨' + (wv[0] > 0 ? '左' : '右') + '眼'
+      + ' | 快照前: AngleZ=' + (_emitTarget ? _emitTarget.ParamAngleZ : 'null')
+      + ' BodyAngleZ=' + (_emitTarget ? _emitTarget.ParamBodyAngleZ : 'null')
+      + ' EyeL=' + (_emitTarget ? _emitTarget.ParamEyeLOpen : 'null')
+      + ' EyeR=' + (_emitTarget ? _emitTarget.ParamEyeROpen : 'null'));
+  } else if (HAPPY_DIRS[name]) {
+    phases = _happyPhases(HAPPY_DIRS[name]);
+  } else if (WORRIED_DIRS[name]) {
+    phases = _worriedPhases(WORRIED_DIRS[name]);
+  }
+  if (!phases) { log('表情: ' + name + ' (未定义)'); return; }
+  // 归位阶段 (00:12): 上次表情弹簧偏离基线 → 前插"归位"阶段(弹簧走回, 不瞬移), 保证每次从基线出发走全幅
+  // 00:34 修复: 阈值 0.3→0.05 — 脏弹簧 pos (如 EyeLOpen 0.46 vs 基线 0.75 差 0.29) 也能触发归位, 防对侧眼跳
+  const needsReset = prevKeys.some(k => _springs[k] && Math.abs(_springs[k].pos - (_emoteBase[k] ?? 0)) > 0.05);
+  if (needsReset) {
+    const resetPh = { params: {}, kc: {}, dur: 650 };
+    for (const k of prevKeys) { resetPh.params[k] = null; resetPh.kc[k] = { k: 45, c: 13 }; }
+    phases = [resetPh, ...phases];
+    log('表情: ' + name + ' (含归位 ' + prevKeys.length + '参数)');
+  }
+  _emoteBase = _emitTarget ? { ..._emitTarget } : {};   // 快照倾听目标
+  _emoteKeys = [];
+  for (const ph of phases) for (const k of Object.keys(ph.params)) if (!_emoteKeys.includes(k)) _emoteKeys.push(k);
+  if (!_emitTarget) _emitTarget = {};
+  _emoteAnim = { phases, pi: 0, phaseStart: performance.now() };
+  _emoteStartT = performance.now();
+  _emoteApplyPhase(phases[0]);
+  log('表情: ' + name + ' | 总段数=' + phases.length + ' | 总dur=' + phases.reduce((s,p)=>s+p.dur,0) + 'ms');
+}
+
+function _emoteApplyPhase(ph) {  // 应用阶段: 目标写 _emitTarget + 弹簧系数覆盖; null=回倾听基础值 (_emoteBase)
+  if (!_emitTarget) _emitTarget = {};
+  for (const [k, v] of Object.entries(ph.params)) {
+    _emitTarget[k] = (v === null) ? (_emoteBase[k] ?? 0) : v;
+  }
+  _springOverride = ph.kc || null;
+  // override 标记: 直接写 _actionOverrides (复刻轻蔑状态机: 眼球走覆盖层不走弹簧); null=delete
+  if (ph.override) {
+    for (const [k, v] of Object.entries(ph.override)) {
+      if (v === null) delete _actionOverrides[k];
+      else _actionOverrides[k] = v;
+    }
+  }
+  // 临时诊断 (00:04): 只在阶段切换(pi变化)时打印目标值 (限频打不出每段, 每帧打印刷屏)
+  const nowPi = _emoteAnim ? _emoteAnim.pi : -1;
+  if (_emoteDbgLastPi !== nowPi) {
+    _emoteDbgLastPi = nowPi;
+    console.log('[EMOTE-PH] pi=' + nowPi + ' AngleZ=' + _emitTarget.ParamAngleZ
+      + ' BodyAngleZ=' + _emitTarget.ParamBodyAngleZ
+      + ' EyeL=' + _emitTarget.ParamEyeLOpen + ' EyeR=' + _emitTarget.ParamEyeROpen);
+  }
+}
+
+// ── 眨眼 ──
+let _blinkTimer = null;
+let _blinkPauseUntil = 0;  // 眨眼暂停截止时间戳 (wink 播放+后10s, 23:28)
+let _emoteDbgT = 0, _emoteRenderDbgT = 0, _emoteDbgLastPi = -1;  // 临时诊断 (23:48, 定位后删)
+let _prevEyeL = 0, _prevEyeR = 0;  // 眼睛跳动检测上一帧值 (00:32)
+function _scheduleBlink() {
+  clearTimeout(_blinkTimer);
+  _blinkTimer = setTimeout(() => {
+    if (performance.now() < _blinkPauseUntil) {   // wink 附近暂停随机眨眼, 避免干扰
+      _scheduleBlink();
+      return;
+    }
+    if (!_blinkControl) {
+      _scheduleBlink(); // 眨眼开关关了: 不眨眼, 继续轮询
+      return;
+    }
+    if (currentEmotion && currentEmotion.startsWith('contempt')) {
+      _scheduleBlink(); // 轻蔑不眨眼, 继续轮询
+      return;
+    }
+    _listenAdd.eye = 0;     // 覆盖为 0（闭眼）
+    _gazeMode = Math.random() < 0.7 ? 'track' : 'loose';  // 眨眼切换盯/不盯 (70%盯前方)
+    setTimeout(() => {
+      delete _listenAdd.eye; // 取消覆盖，回到正常渲染
+    }, 120);
+    _scheduleBlink();
+    // 间隔: 说话时 3~6s (动画角色不宜太快, 18:52 用户定) / 倾听待机 2~10s
+  }, _isSpeaking() ? (3000 + Math.random() * 3000) : (2000 + Math.random() * 8000));
+}
+
+// ── 点头 ──
+let _nodOffset = 0;
+let _nodTimer = null;
+
+function _triggerNod() {
+  const amp = -(8 + Math.random() * 8);  // -8~-16°
+  const holdMs = 250 + Math.random() * 250;  // 250-500ms
+  _nodOffset = amp;
+  setTimeout(() => { _nodOffset = 0; }, holdMs);
+}
+
+function _scheduleNod() {
+  clearTimeout(_nodTimer);
+  const delay = 1500 + Math.random() * 4500;  // 1.5-6s
+  _nodTimer = setTimeout(() => {
+    _triggerNod();
+    // 25% 概率双点头
+    if (Math.random() < 0.25) {
+      setTimeout(_triggerNod, 100 + Math.random() * 300);  // 100-400ms 间距
+    }
+    _scheduleNod();
+  }, delay);
+}
+
+// ── 视线漂移 (lerp 平滑: 漂移~300ms, 停留800-2000ms, 漂回~300ms) ──
+let _gazeTarget = 0;
+let _gazeCurrent = 0;
+let _gazeTimer = null;
+
+function _scheduleGaze() {
+  clearTimeout(_gazeTimer);
+  const delay = 3000 + Math.random() * 7000;  // 3-10s 间隔
+  _gazeTimer = setTimeout(() => {
+    // 设目标: 随机偏移 ±(0.2~0.5)
+    _gazeTarget = (0.2 + Math.random() * 0.3) * (Math.random() > 0.5 ? 1 : -1);
+    // 停留 0.8-2.0s 后漂回正中
+    const holdMs = 800 + Math.random() * 1200;
+    setTimeout(() => { _gazeTarget = 0; }, holdMs);
+    _scheduleGaze();
+  }, delay);
+}
+
+function _getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+async function startLipSync(audioUrl) {
+  window._lipsyncCnt = (window._lipsyncCnt || 0) + 1;
+  var callId = window._lipsyncCnt;
+  console.log('[LipSync #' + callId + '] 进入, audio=' + audioUrl + ' ctx.state=' + _getAudioCtx().state);
+  stopLipSync();
+  if (!audioUrl) return;
+
+  const ctx = _getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+
+  // 绕过 Audio 标签, 直接 fetch → decode → AudioBufferSourceNode
+  // (createMediaElementSource 在 Chrome 中 analyser 常读不到数据)
+  try {
+    const resp = await fetch(audioUrl);
+    const buf = await resp.arrayBuffer();
+    const audioBuffer = await ctx.decodeAudioData(buf);
+
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.3;
+    source.connect(analyser);
+    analyser.connect(ctx.destination);
+
+    const dataArr = new Uint8Array(analyser.fftSize);
+    _lipAnalyser = analyser;
+    _lipData = dataArr;
+    _lipSmoothVal = 0;
+
+    source.onended = () => stopLipSync();
+    source.start();
+    var durMs = Math.ceil(audioBuffer.duration * 1000) + 20;
+    setTimeout(function(){
+      var port = localStorage.getItem('donePort') || '18004';
+      fetch('http://localhost:' + port + '/text', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({source:'tts_done', text:'done'})
+      });
+    }, durMs);
+    if (!_swingInit) _initSwing(); else nextSentence();  // 新句开始: 首句随机 / 后续换向 (19:49)
+    _updateIoBadge();
+    _reapplyEmotion();   // 进入说话: 重算表情 (说话 delta×2×压制)
+    
+  } catch (e) {
+    console.warn('[LipSync] 加载失败:', e);
+    stopLipSync();
+  }
+}
+
+function stopLipSync() {
+  _lipAnalyser = null;
+  _lipData = null;
+  _lipSmoothVal = 0;
+  delete _actionOverrides.ParamMouthOpenY;
+  _vocalizing = false;
+  _swingReturn = true;
+  _swingTurn.target = 0; _swingTilt.target = 0;
+  _endNod();
+  _updateIoBadge();
+  _reapplyEmotion();
+}
+
+// 右上角说话模式 badge: 音频在播放 = 说话中 (本地真实播放状态)
+function _updateIoBadge() {
+  const el = document.getElementById('ioBadge');
+  if (!el) return;
+  const speaking = _isSpeaking();   // 统一说话模式判定: 开关 || 音频在播 (15:22)
+  el.textContent = speaking ? '🗣 说话中' : '🎧 倾听中';
+  el.style.borderColor = speaking ? '#ff6b6b' : '#5abe6e';
+}
+
+// ── WebSocket: 接收后端情绪推送 ──
+function connectWS() {
+  const ws = new WebSocket('ws://localhost:18769');
+  ws.onmessage = (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      if (!d || !d.type) return;
+      if (d.type === 'emotion' && d.emotion) {
+        setEmotion(d.emotion, 4);
+      } else if (d.type === 'speak') {
+        startLipSync(d.audio_url || null);
+      } else if (d.type === 'emotion' && d.cmd === '表情') {
+        var MAP = {
+          wink: ['wink_AL','wink_AR','wink_BL','wink_BR'],
+          开心: ['开心左','开心右'],
+          spin: ['spin左','spin右'],
+          转头: ['转头左','转头右'],
+          担心: ['担心左','担心右']
+        };
+        var DUR = {wink:2020, 开心:3000, spin:1200, 转头:6000, 担心:5000, 认真:3450};
+        var v = MAP[d.arg] || [d.arg];
+        playEmote(v[Math.floor(Math.random()*v.length)]);
+        setTimeout(function(){
+          var port = localStorage.getItem('donePort') || '18004';
+          console.log('[emot done] POST 桥' + port);
+          fetch('http://localhost:' + port + '/text', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({source:'tts_done', text:'done'})
+          });
+        }, (DUR[d.arg] || 2000) + 20);
+      } else if (d.type === 'vad_status') {
+        if (!_vadControl) return;  // VAD 控制开关关了: 直接忽略
+        _vadStatus = d;
+        _vadMode = d.mode || 'listen';
+        _vadRatio = d.ratio ?? null;
+        // 倾听模式激活眨眼 + 点头 + 视线 (一旦激活永不停止)
+        if (d.mode === 'listen' && !_blinkTimer) _scheduleBlink();
+        if (d.mode === 'listen' && !_nodTimer) _scheduleNod();
+        if (d.mode === 'listen' && !_gazeTimer) _scheduleGaze();
+        if (d.mode === 'listen' && d.emotion) {
+          if (d.emotion === '中性') {
+            // 中性: 表情归零, 眨眼继续
+            log('[VAD] 中性 | cur=' + currentEmotion + ' | _vadRatio=' + _vadRatio);
+          } else {
+            const enEmo = CN_TO_EN[d.emotion] || d.emotion;
+            if (_emoBase(enEmo) === _emoBase(currentEmotion) && _emitTarget) {
+              // log('[VAD] 同族更新 | en=' + enEmo + ' cur=' + currentEmotion + ' _vadRatio=' + _vadRatio + ' tgt=Y');
+              // 02:37: 容器族名 → 取 v1 的 set (sad → sad_v1)
+              const defKey = EMOTIONS[enEmo]?.set ? enEmo : enEmo + '_v1';
+              const def = EMOTIONS[defKey];
+              if (def) {
+                for (const [key, val] of Object.entries(def.set)) {
+                  if (UPPER_FACE_PARAMS.has(key) || LOWER_FACE_PARAMS.has(key)) {
+                    const nv = EMOTIONS.neutral.set[key] ?? 0;
+                    _emitTarget[key] = nv + (val - nv) * _vadRatio;
+                  }
+                }
+              }
+            } else {
+              log('[VAD] 跨族setEmo | en=' + enEmo + ' cur=' + currentEmotion + ' eBase=' + _emoBase(enEmo) + ' cBase=' + _emoBase(currentEmotion) + ' tgt=' + (_emitTarget?'Y':'N'));
+              // 02:37: 容器族名 → 取 v1 (sad → sad_v1); 有 set 的族名直接用 (neutral)
+              const emoKey = EMOTIONS[enEmo]?.set ? enEmo : enEmo + '_v1';
+              _setEmoSource = 'VAD';
+              setEmotion(emoKey, 1);
+            }
+          }
+        }
+      }
+    } catch (_) {}
+  };
+  ws.onclose = () => setTimeout(connectWS, 2000);
+  ws.onerror = () => ws.close();
+}
+// connectWS() 移至模型加载完成后调用, 避免双连接
+
+// 独立定时器刷新 VAD 状态显示
+let _vadStatus = null;
+let _vadMode = 'listen';
+let _vadRatio = null;
+
+// 提取情绪基础名 (happy_v2 → happy, contempt_v3 → contempt)
+function _emoBase(emo) { return (emo || '').replace(/_v\d+.*$/, ''); }
+
+// ── 开关按钮 ──
+function toggleVadControl() {
+  _vadControl = !_vadControl;
+  const btn = document.getElementById('btnVadCtl');
+  btn.textContent = 'VAD ' + (_vadControl ? '开' : '关');
+  btn.style.background = _vadControl ? 'rgba(0,200,0,0.2)' : 'rgba(200,0,0,0.2)';
+  btn.style.color = _vadControl ? '#0f0' : '#f00';
+}
+function toggleBlinkControl() {
+  _blinkControl = !_blinkControl;
+  const btn = document.getElementById('btnBlinkCtl');
+  btn.textContent = '眨眼 ' + (_blinkControl ? '开' : '关');
+  btn.style.background = _blinkControl ? 'rgba(0,200,0,0.2)' : 'rgba(200,0,0,0.2)';
+  btn.style.color = _blinkControl ? '#0f0' : '#f00';
+}
+function toggleCycleControl() {
+  _cyclePaused = !_cyclePaused;
+  const btn = document.getElementById('btnCycleCtl');
+  btn.textContent = '循环 ' + (_cyclePaused ? '关' : '开');
+  btn.style.background = _cyclePaused ? 'rgba(200,0,0,0.2)' : 'rgba(0,200,0,0.2)';
+  btn.style.color = _cyclePaused ? '#f00' : '#0f0';
+}
+
+// VAD 中文情绪名 → EMOTIONS 英文键名
+const CN_TO_EN = {
+  '开心':'happy','难过':'sad','生气':'angry','害怕':'fear',
+  '惊讶':'surprise','担心':'worried','轻蔑':'contempt',
+  '害羞':'shy','好奇':'think','紧张':'tense','关心':'care',
+  '受伤':'hurt','关切':'approach','中性':'neutral',
+};
+setInterval(() => {
+  if (!_vadStatus) return;
+  const mode = _vadStatus.mode || 'listen';
+  if (mode === 'listen') {
+    document.getElementById('vadModeLine').textContent = '🎧 倾听';
+    const emo = _vadStatus.emotion || '-';
+    const ratio = _vadStatus.ratio ?? 0;
+    document.getElementById('vEmo').textContent = emo;
+    document.getElementById('vRatio').textContent = 'r=' + ratio.toFixed(4);
+    document.getElementById('l2dEmo').textContent = currentEmotion || '-';
+    // 表达压制值 (0~1 → 百分比; 桥传输字段)
+    const suppress = _vadStatus.suppress ?? 0;
+    document.getElementById('vSuppress').textContent = (suppress * 100).toFixed(0) + '%';
+    _lipSuppress = suppress;   // 说话模式表情放大用 (14:32)
+    // 注意力转移 dist (0~1 → 百分比; 桥传输字段, 说别人时上升)
+    const dist = _vadStatus.dist ?? 0;
+    document.getElementById('vDist').textContent = (dist * 100).toFixed(0) + '%';
+  }
+  // TODO: 说话模式显示三行 (上脸情绪+r / 下脸嘴型 / 肢体动作+r)
+}, 100);
+
+// ── 帧循环 ──
+function frameLoop(now) {
+  if (!inst) { requestAnimationFrame(frameLoop); return; }
+
+  const t = now / 1000;
+  const at = t * TIME_SCALE;  // 动画时间 (×速度缩放)
+
+  // ── 0. 折返跑 Ramp: 多段逼近 + 持续交叉扰动 ──
+  if (_rampState) {
+    const elapsed = performance.now() - _rampState.startTime;
+    const approachDur = _rampState.totalDuration * 0.4; // 40% 折返跑, 60% 定格收敛
+
+    if (elapsed < approachDur) {
+      const p = elapsed / approachDur;
+      const progress = p * p * (3 - 2 * p); // smoothstep: 慢→快→慢 (bell-shaped)
+
+      // ═══ 折返序列 ═══
+      // ratio: 目标比例, weight: 段持续时间占比
+      const Zsteps = [
+        { r: 0.40, w: 40 },  // 0→40
+        { r: 0.20, w: 20 },  // 40→20 (折返)
+        { r: 0.65, w: 45 },  // 20→65
+        { r: 0.35, w: 30 },  // 65→35 (折返)
+        { r: 0.85, w: 50 },  // 35→85
+        { r: 1.00, w: 15 },  // 85→100
+      ];
+      const totalW = 200;
+      const np = progress * totalW;
+
+      // 找当前段
+      let cum = 0, si = 0;
+      for (let i = 0; i < Zsteps.length; i++) {
+        cum += Zsteps[i].w;
+        if (np <= cum) { si = i; break; }
+      }
+      if (si >= Zsteps.length) si = Zsteps.length - 1;
+
+      // 段内插值
+      let sw = 0;
+      for (let i = 0; i < si; i++) sw += Zsteps[i].w;
+      const sp = Zsteps[si].w > 0 ? Math.min(1, (np - sw) / Zsteps[si].w) : 1;
+
+      // Catmull-Rom 样条插值 (C1连续, 速度平滑, 消除直角拐弯)
+      const C = [0, 0.40, 0.20, 0.65, 0.35, 0.85, 1.00]; // 完整路径
+      const p0 = si === 0 ? C[0] : C[si - 1];
+      const p1 = C[si];
+      const p2 = C[si + 1];
+      const p3 = si + 2 >= C.length ? C[si + 1] : C[si + 2];
+      const s2 = sp * sp, s3 = s2 * sp;
+      const cr = Math.max(0, Math.min(1, 0.5 * (
+        (2 * p1) + (-p0 + p2) * sp + (2*p0 - 5*p1 + 4*p2 - p3) * s2 + (-p0 + 3*p1 - 3*p2 + p3) * s3
+      )));
+
+      // 设主目标
+      for (const [key, val] of Object.entries(_rampState.fullTarget)) {
+        const from = _rampState.initialSnapshot[key] || 0;
+        _emitTarget[key] = from + (val - from) * cr;
+      }
+
+      // 折返段切换 → 更新持续扰动 (持续到下一段, 弹簧有足够时间响应)
+      if (si !== _rampState._lastSi) {
+        _rampState._lastSi = si;
+        _rampState._sp = {}; // 清除旧扰动
+
+        const delta = Math.abs(Zsteps[si].r - (si === 0 ? 0 : C[si - 1])); // 本段直线距离
+        if (delta > 0.05) {
+          // 找 primary 移动轴
+          let maxC = 0, pri = null;
+          for (const [key, val] of Object.entries(_rampState.fullTarget)) {
+            const c = Math.abs(val - (_rampState.initialSnapshot[key] || 0)) * delta;
+            if (c > maxC) { maxC = c; pri = key; }
+          }
+          if (pri) {
+            const pv = maxC * (0.2 + Math.random() * 0.2); // ~30%
+            const others = Object.keys(_rampState.fullTarget).filter(k => k !== pri);
+            if (others.length > 0 && pv > 0.5) {
+              const tgt = others[Math.floor(Math.random() * others.length)];
+              _rampState._sp[tgt] = (Math.random() > 0.5 ? 1 : -1) * pv;
+            }
+          }
+        }
+      }
+
+      // 叠加持续扰动
+      for (const [key, val] of Object.entries(_rampState._sp || {})) {
+        _emitTarget[key] = (_emitTarget[key] || 0) + val;
+      }
+
+    } else {
+      // 折返跑结束 → 目标满值, 进入弹簧收敛期 (剩余 40% 时间)
+      for (const [key, val] of Object.entries(_rampState.fullTarget)) {
+        _emitTarget[key] = val;
+      }
+      _rampState = null;
+    }
+  }
+
+  // ── 1. 弹簧物理动画: 有弹簧系数就走弹簧(头/身/表情阶段参数), 无则面部指数平滑 ──
+  if (_emitTarget) {
+    // 真实 dt (上限 50ms 防跳帧异常) × TIME_SCALE 控制全局动画速度
+    let dt = _lastSpringTime ? (now - _lastSpringTime) / 1000 * TIME_SCALE : 0.016 * TIME_SCALE;
+    if (dt > 0.05) dt = 0.05;
+
+    let allStable = true;
+
+    for (const [key, target] of Object.entries(_emitTarget)) {
+      const sp = (_springOverride && _springOverride[key]) || PARAM_SPRINGS[key];  // 表情阶段系数覆盖优先 (21:51)
+      if (sp) {
+        // ★ 有弹簧系数 (头/身/表情阶段参数): 质量-弹簧-阻尼物理
+        if (!_springs[key]) {
+          _springs[key] = { pos: _renderParams[key] ?? 0, vel: 0 };
+        }
+        const s = _springs[key];
+        const ps = sp;
+        const effTarget = (key === 'ParamAngleY') ? target + (_nodOffset || 0) : target;
+        const force = ps.k * (effTarget - s.pos) - ps.c * s.vel;
+        s.vel += force * dt;
+        s.pos += s.vel * dt;
+        _renderParams[key] = s.pos;
+
+        if (Math.abs(target - s.pos) > SPRING_STABLE_EPS || Math.abs(s.vel) > SPRING_STABLE_EPS * 3) {
+          allStable = false;
+        }
+      } else {
+        // ★ 面部: 指数平滑过渡 (非瞬间, ~100ms到位)
+        const cur = _renderParams[key] ?? target;
+        const speed = 1 - Math.pow(1 - 0.5, dt * 60); // 帧率无关的半衰平滑
+        _renderParams[key] = cur + (target - cur) * speed;
+      }
+    }
+
+    _lastSpringTime = now;
+
+    // 所有身体参数稳定 → 保持 target 不清理, 弹簧继续为待机层提供微动
+    if (allStable) {
+      // 保持 _emitTarget 不变, 让弹簧始终响应待机微动
+    }
+  }
+
+
+  // ── 1.5 视线漂移 (lerp 平滑, 每次漂移~300ms) ──
+  _gazeCurrent += (_gazeTarget - _gazeCurrent) * 0.05;
+  _renderParams.ParamEyeBallX = (_renderParams.ParamEyeBallX || 0) + _gazeCurrent;
+
+  // ── 2. 待机层: 呼吸 + 自然身体摇晃 (多频叠加 + 相位漂移) ──
+  _renderParams.ParamBreath = 0.015 * Math.sin(at * 0.5);
+  const st = at * Math.PI * 2;
+  const driftA = Math.sin(st * 0.06 + 0.3);
+  const driftB = Math.sin(st * 0.09 + 1.7);
+  const driftC = Math.sin(st * 0.11 + 2.5);
+
+  // 身体前后微晃 + 侧晃 + 头歪 — 直接叠加到渲染值
+  _renderParams.ParamBodyAngleY = (_renderParams.ParamBodyAngleY || 0)
+    + 0.06 * Math.sin(st * 0.35 + driftA * 1.0)
+    + 0.03 * Math.sin(st * 0.72 + driftB * 0.7)
+    + 0.015 * Math.sin(st * 1.15 + driftC * 0.6);
+  _renderParams.ParamBodyAngleZ = (_renderParams.ParamBodyAngleZ || 0)
+    + 0.08 * Math.sin(st * 0.30 + driftB * 0.9)
+    + 0.03 * Math.sin(st * 0.65 + driftA * 0.8)
+    + 0.015 * Math.sin(st * 1.10 + driftC * 0.7);
+  _renderParams.ParamAngleZ = (_renderParams.ParamAngleZ || 0)
+    + 0.04 * Math.sin(st * 0.38 + driftC * 0.8)
+    + 0.02 * Math.sin(st * 0.82 + driftA * 0.6);
+  _renderParams.ParamAngleY = (_renderParams.ParamAngleY || 0)
+    + 0.03 * Math.sin(st * 0.33 + driftA * 1.1)
+    + 0.015 * Math.sin(st * 0.75 + driftB * 0.9);
+
+  // ── 3. 情绪表演层: 特定于当前情绪的节律性动作 (大笑点头/哭泣颤抖等) ──
+  const perf = EMOTIONS[currentEmotion]?.perform;
+  if (perf) {
+    for (const [, cfg] of Object.entries(perf)) {
+      _renderParams[cfg.param] = (_renderParams[cfg.param] || 0)
+        + cfg.amp * Math.sin(at * cfg.freq * Math.PI * 2);
+    }
+  }
+
+  // 面部微动
+
+  // 眉毛微颤 (左右独立, 振幅为原来的 1/3)
+  const browL = 0.008 * Math.sin(st * 0.48 + driftB * 1.3)
+              + 0.005 * Math.sin(st * 0.70 + driftC * 1.0);
+  const browR = 0.008 * Math.sin(st * 0.52 + driftA * 1.3)
+              + 0.005 * Math.sin(st * 0.67 + driftB * 0.8);
+  _renderParams.ParamBrowLY = (_renderParams.ParamBrowLY || 0) + browL;
+  _renderParams.ParamBrowRY = (_renderParams.ParamBrowRY || 0) + browR;
+
+  // 嘴角 + 脸颊微波动
+  _renderParams.ParamMouthForm = (_renderParams.ParamMouthForm || 0) + 0.075 * Math.sin(st * 0.45 + 0.9 + driftB * 0.4);
+  _renderParams.ParamCheek = (_renderParams.ParamCheek || 0) + 0.05 * Math.sin(st * 0.48 + 2.6 + driftC * 0.3);
+  // 眼睑微波动 (左右独立频率+独立漂移, 不同步+不规律)
+  const eyeL = 0.0015 * Math.sin(st * 0.28 + driftA * 1.5)
+             + 0.0010 * Math.sin(st * 0.62 + driftC * 1.2);
+  const eyeR = 0.0015 * Math.sin(st * 0.35 + driftB * 1.5)
+             + 0.0010 * Math.sin(st * 0.55 + driftA * 1.0);
+  _renderParams.ParamEyeLOpen = (_renderParams.ParamEyeLOpen || 0) + eyeL;
+  _renderParams.ParamEyeROpen = (_renderParams.ParamEyeROpen || 0) + eyeR;
+
+  // ── 3. 唇同步 (Web Audio API 音频分析) ──
+  if (_lipAnalyser && _lipData) {
+    // 时域分析 — 取原始波形峰值 (比频域更可靠)
+    _lipAnalyser.getByteTimeDomainData(_lipData);
+    let sumRms = 0;
+    for (let i = 0; i < _lipData.length; i++) {
+      const v = (_lipData[i] - 128) / 128;
+      sumRms += v * v;
+    }
+    const rms = Math.sqrt(sumRms / _lipData.length);
+    _lipSmoothVal = 0.4 * rms + 0.6 * _lipSmoothVal;
+    // (调试日志已精简 20:16: 只留"触发下一句")
+    _actionOverrides.ParamMouthOpenY = Math.min(_lipSmoothVal * 6.0 + 0.05, 1.0);
+
+    // ── 静音状态机 (20:01): 说话模式中的延续性判断 ──
+    if (_lipSmoothVal > SILENCE_RMS) {
+      // 有声音 → 说话中 (从倾听进入=首句已在 startLipSync 触发), 重置静音计时
+      _vocalizing = true;
+      _silenceStart = null; _gapFired = false; _gapRolledBack = false;
+    } else {
+      if (_silenceStart === null) _silenceStart = now;
+      const gap = now - _silenceStart;
+      if (!_gapFired && gap >= GAP_TRIGGER) {
+        _gapFired = true;
+        nextSentence();   // 静音0.2s: 先按"下一句"走 (新点头+新转头角度)
+      }
+      if (_gapFired && !_gapRolledBack && gap >= GAP_SENTENCE) {
+        _gapRolledBack = true;
+        _vocalizing = false;        // 0.4s内无声音 → 打断"下一句"动作回基线, 切倾听
+        _swingReturn = true;        // 弹簧继续积分回正
+        _swingTurn.target = 0; _swingTilt.target = 0;  // 头回情绪基准
+        _endNod();
+      }
+    }
+
+    // 说话时重置待机触发计时
+    _fidgetNextAt = now + Math.round(8000 / TIME_SCALE);
+    _fidgetActive = null;
+
+  } else {
+    // ── 非说话: 待机微动作调度 (fidget 独立开关 _fidgetOn) ──
+    if (_fidgetOn) {
+      if (!_fidgetNextAt) _scheduleFidget(now);
+      if (now >= _fidgetNextAt && !_fidgetActive) _triggerFidget(now);
+    } else {
+      _fidgetActive = null;
+    }
+
+    // 执行当前微动作 (带 fade-in/out) — 00:00 修复: 叠加待机层(与步骤2同款), 不再写 override 覆盖层 (与表情/说话共存)
+    if (_fidgetActive) {
+      const elapsed = now - _fidgetActive.startTime;
+      const dur = _fidgetActive.duration;
+      if (elapsed < dur) {
+        const t = elapsed / dur;
+        const fade = t < 0.2 ? t / 0.2 : t > 0.8 ? (1 - t) / 0.2 : 1;  // 梯形包络
+        for (const [k, v] of Object.entries(_fidgetActive.params)) {
+          _renderParams[k] = (_renderParams[k] || 0) + v * fade;   // 叠加, 不覆盖
+        }
+      } else {
+        _fidgetActive = null;
+      }
+    }
+
+    // ── 18组随机动作 (独立开关 _idleSeqOn, delta 平滑叠加不覆盖情绪, 3-8s随机) ──
+    if (_idleSeqOn) {
+      if (!_idleNextAt) _scheduleIdleSeq(now);
+      if (now >= _idleNextAt && !_idleAnim) _triggerIdleSeq(now);
+    } else {
+      _idleAnim = null;
+      _idleKeys.forEach(k => _idleCur[k] = 0);   // 关: 已有 delta 平滑归零
+      _idleKeys = [];
+    }
+    if (_idleAnim) {
+      const seq = _idleAnim.seq;
+      const beat = seq.beats[_idleAnim.bi];
+      // 阶段推进
+      if (now - _idleAnim.phaseStart >= beat.t) {
+        _idleAnim.bi++;
+        if (_idleAnim.bi >= seq.beats.length) {
+          _idleAnim = null;                       // 序列结束: 目标清零, 弹簧平滑回中
+          _idleKeys.forEach(k => _idleCur[k] = 0);
+          _idleKeys = [];
+          _scheduleIdleSeq(now);
+        } else {
+          _idleAnim.phaseStart = now;
+        }
+      }
+      // 应用当前拍 (有 reset 的先清目标, 有 params 的设新目标)
+      if (_idleAnim) {
+        const curBeat = seq.beats[_idleAnim.bi];
+        if (curBeat.reset) {
+          _idleKeys.forEach(k => _idleCur[k] = 0);   // 回中: 平滑归零
+          _idleKeys = [];
+        } else if (curBeat.params) {
+          for (const [k, v] of Object.entries(curBeat.params)) {
+            if (_idleCur[k] === undefined) { _idleCur[k] = 0; if (!_idleKeys.includes(k)) _idleKeys.push(k); }
+            _idleCur[k] = v;                         // 新目标 (delta)
+          }
+        }
+      }
+    }
+    // ── 18组 delta 二阶弹簧积分 (复用 PARAM_SPRINGS k/c, 与表情动作同款物理, 头快身慢+过冲) ──
+    if (Object.keys(_idleCur).length) {
+      const idleDt = Math.min((now - (_idleLastT || now)) / 1000 * TIME_SCALE, 0.05) || 0.016 * TIME_SCALE;
+      _idleLastT = now;
+      for (const [k, target] of Object.entries(_idleCur)) {
+        const sp = PARAM_SPRINGS[k] || { k: 28, c: 9 };   // 默认用最慢身体系数
+        if (!_idleSprings[k]) _idleSprings[k] = { pos: 0, vel: 0 };
+        const s = _idleSprings[k];
+        const force = sp.k * (target - s.pos) - sp.c * s.vel;   // 二阶质量-弹簧-阻尼
+        s.vel += force * idleDt;
+        s.pos += s.vel * idleDt;
+        _renderParams[k] = (_renderParams[k] || 0) + s.pos;     // delta 叠加到当前值
+        // 归零完成清理 (target=0 且弹簧静止): 释放 key, 避免累积
+        if (target === 0 && Math.abs(s.pos) < 0.01 && Math.abs(s.vel) < 0.05) {
+          delete _idleCur[k]; delete _idleSprings[k];
+        }
+      }
+    }
+  }
+
+   // ── 3.4 说话模式 (15:22 与嘴型解耦): 只要说话模式就按情绪动作
+  //     摆头/歪头 (16:50) = 句子长度驱动: 方向每句交替, 慢弹簧 ~1.8s 到位
+  //     点头 (17:25) = 事件驱动: 情绪只影响方向(正抬/负低), 幅度10°±30%, 时间~1s±20%
+  //     _swingReturn (19:49) = 说完回正中: 非说话时弹簧继续积分回0
+  if (_isSpeaking() || _swingReturn) {
+    // ── 3.4a 话语级摆头/歪头/点头: 首次说话自动初始化, 慢弹簧积分 → 覆盖姿态 ──
+    if (!_swingInit) _initSwing();
+    const swDt = Math.min((now - (_swingLastT || now)) / 1000 * TIME_SCALE, 0.05) || 0.016 * TIME_SCALE;
+    _swingLastT = now;
+    for (const s of [_swingTurn, _swingTilt]) {
+      const force = SWING_SPRING.k * (s.target - s.pos) - SWING_SPRING.c * s.vel;
+      s.vel += force * swDt;
+      s.pos += s.vel * swDt;
+    }
+    _actionOverrides.ParamAngleX = _swingTurn.pos;
+    _actionOverrides.ParamAngleZ = _swingTilt.pos;
+    // 转头带动躯干 (18:36): 同号 ×0.25 (研究: 说话小幅度躯干跟随 15~30%, 头X→身X)
+    _actionOverrides.ParamBodyAngleX = _swingTurn.pos * 0.25;
+    // 注: 点头/歪头的躯干跟随不做 (18:42 用户决定, 模型灵活度原因不做)
+    const nf = _nodSpring.k * (_nodSpring.target - _nodSpring.pos) - _nodSpring.c * _nodSpring.vel;
+    _nodSpring.vel += nf * swDt;
+    _nodSpring.pos += _nodSpring.vel * swDt;
+    _actionOverrides.ParamAngleY = _nodSpring.pos;
+    // ── 3.4b 一次点头 (18:25): 每句触发一次"抬-落", 完成后停住等下一句, 不循环 ──
+    if (_nodSpring.rising) {
+      if (Math.abs(_nodSpring.pos - _nodSpring.target) < 0.4 && Math.abs(_nodSpring.vel) < 0.5) {
+        _nodSpring.target = 0;
+        _nodSpring.rising = false;
+      }
+    }
+    if (now - _swingDbgT > 500) {   // 调试日志精简 (20:16): 不再输出
+    }
+  }
+
+  // ── 3.4c 说话眼神: track=盯前方 / 轻蔑/fear眼球特权: 说话时也免疫VOR覆盖 ──
+  if (_isSpeaking() && _gazeMode === 'track' && !_contemptCycle && !_fearShake && !_emoteContemptCycle) {
+    if (now - _gazeDriftT > (500 + Math.random() * 1000)) {   // 每 0.5~1.5s 换扫视目标 (像扫视你/观察五官)
+      _gazeDriftT = now;
+      _gazeDriftX = (Math.random() - 0.5) * 0.3;   // ±0.15 小漂移
+      _gazeDriftY = (Math.random() - 0.5) * 0.2;
+    }
+    _actionOverrides.ParamEyeBallX = -_swingTurn.pos * EYE_VOR_K + _gazeDriftX;  // 头左转5°→眼球右转(反向抵消)
+    _actionOverrides.ParamEyeBallY = -_nodSpring.pos * EYE_VOR_K + _gazeDriftY;  // 点头反向补偿 (歪头不补偿)
+  } else {
+    // 02:24 轻蔑状态机特权 / 02:30 fear状态机特权: 在跑时眼珠归它们管, 3.4c 不删
+    if (!_contemptCycle && !_fearShake && !_emoteContemptCycle) {
+      delete _actionOverrides.ParamEyeBallX;   // loose/非说话: 清残留, 眼珠回表情/漂移值 (随头不修正)
+      delete _actionOverrides.ParamEyeBallY;
+    }
+  }
+
+  // ── 回正完成 (19:49): 非说话且三轴归0 → 清摆头override交还表情 ──
+  if (_swingReturn && !_isSpeaking() &&
+      Math.abs(_swingTurn.pos) < 0.5 && Math.abs(_swingTilt.pos) < 0.5 && Math.abs(_nodSpring.pos) < 0.5) {
+    _swingReturn = false;
+    delete _actionOverrides.ParamAngleX;
+    delete _actionOverrides.ParamAngleY;
+    delete _actionOverrides.ParamAngleZ;
+    delete _actionOverrides.ParamBodyAngleX;
+  }
+
+  // ── 3.5 倾听姿态 (用户说话时: 前倾+歪头) ──
+  if (_vadRatio > 0) {
+    _actionOverrides.ParamBodyAngleX = (_renderParams.ParamBodyAngleX || 0) - 3;
+    _actionOverrides.ParamAngleZ     = (_renderParams.ParamAngleZ || 0) + 6;
+    // 疑似凶手: VAD活动时每帧+0.15压平所有情绪的眼睛差异 (sad_v2 0.4→0.55 看不出来)
+    // _actionOverrides.ParamEyeLOpen   = (_renderParams.ParamEyeLOpen || 0) + 0.15;
+    // _actionOverrides.ParamEyeROpen   = (_renderParams.ParamEyeROpen || 0) + 0.15;
+  }
+
+  // ── 4. 动作覆盖层 (最高优先级, 含眼珠抖动) ──
+  Object.assign(_renderParams, _actionOverrides);
+  // 临时诊断 (23:48): override 合并后真正送 setParams 的值 + override 是否在盖 (说话模式覆盖检测)
+  if (!_emoteRenderDbgT || now - _emoteRenderDbgT > 300) {
+    _emoteRenderDbgT = now;
+    // console.log('[EMOTE-RENDER] ...'); // 暂关
+  }
+  // 临时诊断 (00:32): 眼睛跳动定位 — EyeL/EyeR 帧间变化>0.03 时打印来源 (override/listenAdd/弹簧/目标)
+  const eL = _renderParams.ParamEyeLOpen || 0, eR = _renderParams.ParamEyeROpen || 0;
+  if (Math.abs(eL - _prevEyeL) > 0.03 || Math.abs(eR - _prevEyeR) > 0.03) {
+    // console.log('[EYE-JUMP] ...'); // 暂关
+  }
+  _prevEyeL = eL; _prevEyeR = eR;
+  // ── 4.1 表情阶段驱动 (21:51): 每阶段目标写 _emitTarget + 弹簧系数覆盖, 过渡全由弹簧系统完成 ──
+  if (_emoteAnim) {
+    const ph = _emoteAnim.phases[_emoteAnim.pi];
+    if (performance.now() - _emoteAnim.phaseStart >= ph.dur) {
+      _emoteAnim.pi++;
+      if (_emoteAnim.pi >= _emoteAnim.phases.length) {
+        _emoteAnim = null; _springOverride = null;
+        delete _actionOverrides.ParamEyeBallX;  // 清理 emote override 残留
+        delete _actionOverrides.ParamEyeBallY;
+        delete _actionOverrides.ParamEyeLOpen;
+        delete _actionOverrides.ParamEyeROpen;
+        _vadControl = _emotePrevVad;
+        _blinkControl = _emotePrevBlink;
+        _cyclePaused = _emotePrevCycle;
+        log('表情完成 | 实际历时=' + Math.round(performance.now() - _emoteStartT) + 'ms');
+        _emoteRestore();   // 恢复倾听目标, 弹簧平滑回基础
+      } else {
+        _emoteAnim.phaseStart = performance.now();
+      }
+    }
+    if (_emoteAnim) {   // 每帧应用当前阶段: 目标值 + 弹簧系数 (表情优先, 覆盖倾听/折返跑/VAD的写入)
+      _emoteApplyPhase(_emoteAnim.phases[_emoteAnim.pi]);
+    }
+  }
+
+  // ── 4.5 倾听覆盖层 (直接覆盖, 不影响底层情绪) ──
+  if (_listenAdd.eye !== undefined) {
+    _renderParams.ParamEyeLOpen = _listenAdd.eye;
+    _renderParams.ParamEyeROpen = _listenAdd.eye;
+  }
+
+  // ── 5. 推送到 L2D ──
+  inst.setParams(_renderParams);
+
+  requestAnimationFrame(frameLoop);
+}
+
+// ── 骨骼测试 ──
+function testParam(paramId, val) {
+  const tmp = {};
+  tmp[paramId] = val;
+  _actionOverrides = { ..._actionOverrides, ...tmp };
+  log('测试: ' + paramId + '=' + val);
+  // 2 秒后自动清除
+  clearTimeout(window._testClear);
+  window._testClear = setTimeout(() => {
+    delete _actionOverrides[paramId];
+    log('测试清除: ' + paramId);
+  }, 2000);
+}
+
+// ── 按钮事件绑定 (按钮用 onclick, 无需额外绑定) ──
+function bindButtons() {}
+
+// ── VAD 状态徽章 (toggle): 点它展开/收起完整状态 ──
+function toggleVadStatus() {
+  const vs = $('vadStatus');
+  const g = $('vadGate');
+  if (!vs) return;
+  const showing = vs.style.display !== 'none';
+  if (showing) {
+    vs.style.display = 'none';
+    if (g) g.textContent = '🎧 VAD';
+  } else {
+    vs.style.display = 'block';
+    if (g) g.textContent = '🎧 VAD ▼';
+  }
+}
+
+// ── 开始测试 (toggle): 展开/收起左右测试面板, 按钮不消失 ──
+function toggleTestPanels() {
+  const bp = $('btnPanel');
+  const tp = $('testPanel');
+  const btn = $('btnTestGate');
+  const showing = bp && bp.style.display === 'flex';
+  if (showing) {
+    if (bp) bp.style.display = 'none';
+    if (tp) tp.style.display = 'none';
+    if (btn) btn.textContent = '🎮 开始测试';
+    log('测试面板已收起');
+  } else {
+    if (bp) { bp.style.display = 'flex'; bp.style.flexDirection = 'column'; }
+    if (tp) { tp.style.display = 'flex'; tp.style.flexDirection = 'column'; }
+    if (btn) btn.textContent = '🎮 收起测试';
+    log('测试面板已展开');
+  }
+}
+
+// ── 主入口 ──
+(async () => {
+  try {
+    log('初始化...');
+
+    // 检查 L2D 库
+    if (typeof L2D === 'undefined') throw new Error('L2D 库未加载 (CDN 不可达?)');
+    log('L2D 库: ✓');
+
+    // 创建实例
+    const canvas = $('l2dCanvas');
+    inst = L2D.init(canvas);
+
+    // 监听加载进度
+    inst.on('loadprogress', (loaded, total, file) => {
+      const pct = Math.round(loaded / total * 100);
+      const msg = $('loadMsg');
+      if (msg) msg.textContent = `加载中 ${pct}% (${loaded}/${total})`;
+    });
+
+    // 监听加载完成
+    inst.on('loaded', () => {
+      log('模型加载完成!');
+
+      // 隐藏 loading
+      const loadEl = $('loading');
+      if (loadEl) loadEl.style.display = 'none';
+
+      // 设置初始位置 (居中, 微下移让脸不被裁)
+      inst.setPosition(0, -0.05);
+      // 缩小 5% (鞋底显示不全, 被页面挡住 → 缩到 95%)
+      inst.setScale(0.95);
+
+      // 初始化渲染参数 (neutral)
+      _renderParams = {};
+      for (const [key, val] of Object.entries(EMOTIONS.neutral.set)) {
+        _renderParams[key] = val;
+      }
+      _renderParams.ParamBreath = 0.03;
+
+      // 启动帧循环
+      requestAnimationFrame(frameLoop);
+
+      // 绑定按钮
+      bindButtons();
+
+      // 初始 neutral 让系统有基础渲染目标
+      _setEmoSource = 'LOAD';
+      setEmotion('neutral', 1);
+
+      // 启动眨眼循环 (不依赖 WS; WS listen 消息也有兜底启动)
+      if (!_blinkTimer) _scheduleBlink();
+
+      // 连接后端情绪推送
+      connectWS();
+
+      log('就绪! 点击左侧按钮测试情绪');
+    });
+
+    // 加载模型
+    log('加载模型中...');
+    await inst.load({
+      path: 'model_live2d/科技感近战法师.model3.json',
+      logLevel: 'warn',
+    });
+
+  } catch (e) {
+    err('初始化失败: ' + e.message);
+    console.error(e);
+  }
+})();
+</script>
+
+</body>
+</html>
+
