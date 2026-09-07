@@ -13,8 +13,8 @@ HEADER = struct.Struct('>I2H2I')
 WBI_TABLE = [46,47,18,2,53,8,23,32,15,50,10,31,58,3,45,35,27,43,5,49,33,9,42,19,29,28,14,39,12,38,41,13]
 
 # ── B站直播开放平台配置（2026-08-11 申请通过，合法稳定监听）──
-OPEN_LIVE_AK_ID = 'OMherZJ6SPbDw1DMUC9hUz18'
-OPEN_LIVE_AK_SECRET = 'McOpgSDBCjrXgXKvhxLGz7eKtptNFe'
+OPEN_LIVE_AK_ID = os.environ.get("BILI_OPEN_LIVE_AK_ID", "")
+OPEN_LIVE_AK_SECRET = os.environ.get("BILI_OPEN_LIVE_AK_SECRET", "")
 OPEN_LIVE_APP_ID = 1786938510612          # 项目ID「弹幕读取器」
 OPEN_LIVE_CODE = ''                        # 默认身份码（会被同目录 blc_config.json 覆盖；页面可改）
 OPEN_LIVE_HOST = 'https://live-open.biliapi.com'

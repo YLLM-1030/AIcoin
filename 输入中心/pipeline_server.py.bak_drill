@@ -704,7 +704,7 @@ def trigger_summarize():
 def call_deepseek(prompt, system="", max_tokens=128):
     """调用 DeepSeek Chat API"""
     DEEPSEEK_API = "https://api.deepseek.com/v1/chat/completions"
-    DEEPSEEK_KEY = "sk-a7ceee1e88444f799a2f857b323bf4a3"
+    DEEPSEEK_KEY = os.environ.get("MINICOIN_LLM_API_KEY", "")
     messages = []
     if system:
         messages.append({"role": "system", "content": system})

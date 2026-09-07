@@ -6,10 +6,11 @@ mini_coin web_search 工具 — 秘塔搜索引擎封装
 """
 
 import json
+import os
 import urllib.request
 import urllib.error
 
-API_KEY = "mk-1F203F3C3902179EBB637E36500BEFCE"
+API_KEY = os.environ.get("METASO_API_KEY", "")
 API_URL = "https://metaso.cn/api/v1/chat/completions"
 
 

@@ -6,6 +6,7 @@ mini_coin_llm_bridge.py — 透明代理 + ASR 文本接收
 - GET  /source_last → 返回各源最新文本
 """
 import json
+import os
 from http.server import BaseHTTPRequestHandler
 from socketserver import ThreadingTCPServer
 import requests
@@ -14,7 +15,7 @@ import requests
 BACKEND = "api"                       # 当前后端: "api"=DeepSeek / "local"=本地 llama.cpp（运行时可用 POST /api/backend 切换）
 LOCAL_API = "http://localhost:8080/completion"   # 本地 llama-server
 API_URL = "https://api.deepseek.com/v1/chat/completions"
-API_KEY = "sk-a7ceee1e88444f799a2f857b323bf4a3"
+API_KEY = os.environ.get("MINICOIN_LLM_API_KEY", "")
 API_MODEL = "deepseek-chat"           # DeepSeek V4 Flash（如模型名不同改这里）
 API_TIMEOUT = 55                      # 略小于管线 timeout=60，让桥先返回空 → 管线判空丢轮
 
